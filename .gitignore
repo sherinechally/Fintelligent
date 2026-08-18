@@ -1,0 +1,21 @@
+# Secrets — never commit. .env.example documents the required keys instead.
+.env
+
+# Environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+
+# Playwright
+playwright-report/
+test-results/

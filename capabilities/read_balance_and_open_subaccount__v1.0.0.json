@@ -1,0 +1,332 @@
+{
+  "capability_id": "read_balance_and_open_subaccount",
+  "version": "1.0.0",
+  "description": "Look up a member, read their Savings balance, and open a new sub-account for them, reaching the confirmation screen.",
+  "target_surface": "http://127.0.0.1:5000",
+  "entry_path": "/",
+  "inputs": [
+    {
+      "name": "member_id",
+      "type": "string",
+      "description": "",
+      "required": true
+    },
+    {
+      "name": "filter_account_type",
+      "type": "string",
+      "description": "",
+      "required": true
+    },
+    {
+      "name": "account_type",
+      "type": "string",
+      "description": "",
+      "required": true
+    },
+    {
+      "name": "initial_deposit",
+      "type": "number",
+      "description": "",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savings_balance",
+      "type": "string",
+      "description": ""
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "step_1",
+      "action": {
+        "verb": "type",
+        "target": {
+          "semantic": {
+            "role": "textbox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Member ID:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:textbox"
+          },
+          "visual": null
+        },
+        "value": "${input.member_id}",
+        "intent": "Enter member ID to search",
+        "output_key": null
+      },
+      "intent": "Enter member ID to search",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_2",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "button",
+            "name": "Search",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Member ID:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:button"
+          },
+          "visual": null
+        },
+        "value": null,
+        "intent": "Click search to find member",
+        "output_key": null
+      },
+      "intent": "Click search to find member",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_3",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "link",
+            "name": "View",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Open member detail page",
+        "output_key": null
+      },
+      "intent": "Open member detail page",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_4",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "button",
+            "name": "Filter",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Account Type",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:button"
+          },
+          "visual": null
+        },
+        "value": null,
+        "intent": "Open filter control for Account Type column",
+        "output_key": null
+      },
+      "intent": "Open filter control for Account Type column",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_5",
+      "action": {
+        "verb": "select",
+        "target": {
+          "semantic": {
+            "role": "combobox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Account Type",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:combobox"
+          },
+          "visual": null
+        },
+        "value": "${input.filter_account_type}",
+        "intent": "Select Savings filter option",
+        "output_key": null
+      },
+      "intent": "Select Savings filter option",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_6",
+      "action": {
+        "verb": "read",
+        "target": {
+          "semantic": {
+            "role": null,
+            "name": null,
+            "match": "exact",
+            "row_anchor": {
+              "column": "Account Type",
+              "equals": "${input.filter_account_type}"
+            },
+            "column": "Balance"
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Read the Savings account balance",
+        "output_key": "savings_balance"
+      },
+      "intent": "Read the Savings account balance",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_7",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "link",
+            "name": "Open New Sub-Account",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Open new sub-account form",
+        "output_key": null
+      },
+      "intent": "Open new sub-account form",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_8",
+      "action": {
+        "verb": "select",
+        "target": {
+          "semantic": {
+            "role": "combobox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Account Type:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:combobox"
+          },
+          "visual": null
+        },
+        "value": "${input.account_type}",
+        "intent": "Select Money Market account type",
+        "output_key": null
+      },
+      "intent": "Select Money Market account type",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_9",
+      "action": {
+        "verb": "type",
+        "target": {
+          "semantic": {
+            "role": "textbox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Initial Deposit ($):",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:textbox"
+          },
+          "visual": null
+        },
+        "value": "${input.initial_deposit}",
+        "intent": "Enter initial deposit amount",
+        "output_key": null
+      },
+      "intent": "Enter initial deposit amount",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_10",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "button",
+            "name": "Submit",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Submit the new sub-account form",
+        "output_key": null
+      },
+      "intent": "Submit the new sub-account form",
+      "recorded_tier": "semantic"
+    }
+  ],
+  "checkpoint": {
+    "semantic": {
+      "role": "text",
+      "name": "Sub-account opened successfully",
+      "match": "contains",
+      "row_anchor": null,
+      "column": null
+    },
+    "structural": null,
+    "visual": null
+  },
+  "restartable_after_recovery": false,
+  "created_at": "2026-08-18T06:13:55.272679Z"
+}

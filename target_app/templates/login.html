@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+<title>CU Member Services - Sign In</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; background: #d4d0c8; margin: 0; }
+  table { border-collapse: collapse; }
+  .chrome { background: #003366; }
+  .chrome td { color: white; font-weight: bold; padding: 4px 8px; font-size: 14px; }
+  .panel { background: #ffffff; border: 2px solid #7f9db9; padding: 10px; margin: 10px; }
+  .formTable td { padding: 4px 8px; }
+  .formTable td.label { font-weight: bold; width: 90px; }
+  .errorBox { background: #fdd; border: 1px solid #b00; color: #900; padding: 6px 10px; margin: 10px; }
+  .warnBox { background: #ffd; border: 1px solid #b90; color: #750; padding: 6px 10px; margin: 10px; }
+  .hint { color: #666; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<table width="100%" class="chrome"><tr><td>Member Services Console</td></tr></table>
+
+{% if expired %}
+<table class="warnBox" width="440">
+  <tr><td>Your session has expired. Please sign in again to continue.</td></tr>
+</table>
+{% endif %}
+
+{% if error %}
+<table class="errorBox" width="440"><tr><td>{{ error }}</td></tr></table>
+{% endif %}
+
+<table class="panel" width="440">
+  <tr><td>
+    <form method="post" action="/login">
+      <table class="formTable">
+        <tr><td class="label">Username:</td><td><input type="text" name="username"></td></tr>
+        <tr><td class="label">Password:</td><td><input type="password" name="password"></td></tr>
+        <tr><td></td><td><input type="submit" value="Sign In"></td></tr>
+      </table>
+    </form>
+  </td></tr>
+</table>
+
+<table class="panel" width="440">
+  <tr><td class="hint">
+    Demo operators (fake credentials, local mock only):<br>
+    &nbsp;&nbsp;<b>s.patel</b> / demo &mdash; Officer (read + write)<br>
+    &nbsp;&nbsp;<b>t.nguyen</b> / demo &mdash; Teller (read only)<br>
+    &nbsp;&nbsp;<b>a.novak</b> / demo &mdash; Unprovisioned (signs in, no access)
+  </td></tr>
+</table>
+
+</body>
+</html>

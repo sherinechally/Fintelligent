@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<title>CU Member Services - Member Detail</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; background: #d4d0c8; margin: 0; }
+  table { border-collapse: collapse; }
+  .chrome { background: #003366; }
+  .chrome td { color: white; font-weight: bold; padding: 4px 8px; font-size: 14px; }
+  .chrome td.navLinks { font-weight: normal; font-size: 11px; }
+  .chrome td.navLinks a { color: #cde1f2; text-decoration: none; margin: 0 6px; }
+  .chrome td.globalSearch { text-align: right; font-weight: normal; font-size: 11px; }
+  .panel { background: #ffffff; border: 2px solid #7f9db9; padding: 10px; margin: 10px; }
+  .infoTable td { padding: 2px 8px; }
+  .infoTable td.label { font-weight: bold; width: 100px; }
+  .acctTable { width: 100%; border: 1px solid #999; }
+  .acctTable td, .acctTable th { border: 1px solid #999; padding: 4px 8px; text-align: left; }
+  .acctTable th { background: #e8e4d8; }
+  .statusActive { color: green; font-weight: bold; }
+  .statusClosed { color: #b00; font-weight: bold; }
+  .iconBtn { font-size: 11px; padding: 0px 3px; border: 1px solid #999; background: #f0eee6; cursor: pointer; }
+  .acctTable th form { display: inline; }
+  .acctTable th select { font-size: 11px; }
+</style>
+</head>
+<body>
+
+{% macro preserve_sort() %}{% if sort_col %}<input type="hidden" name="sort_col" value="{{ sort_col }}"><input type="hidden" name="sort_dir" value="{{ sort_dir }}">{% endif %}{% endmacro %}
+{% macro preserve_filter() %}{% if filter_col %}<input type="hidden" name="filter_col" value="{{ filter_col }}"><input type="hidden" name="filter_value" value="{{ filter_value }}">{% endif %}{% endmacro %}
+
+<table width="100%" class="chrome"><tr>
+  <td width="24%">Member Services Console</td>
+  <td class="navLinks"><a href="/">Member Search</a>&nbsp;|&nbsp;<a href="#">Loans</a>&nbsp;|&nbsp;<a href="#">Cards</a>&nbsp;|&nbsp;<a href="#">Reports</a>&nbsp;|&nbsp;<a href="#">Settings</a></td>
+  <td class="globalSearch" width="30%">
+    {% if operator %}Signed in: {{ operator.display }} ({{ operator.role }}) <a href="/logout" style="color:#cde1f2">Sign out</a>{% endif %}
+    <form method="get" action="/" style="display:inline">
+      <input type="text" name="member_id" size="8"> <input type="submit" value="Search">
+    </form>
+  </td>
+</tr></table>
+
+<table class="panel" width="600">
+  <tr><td>
+    <table class="infoTable">
+      <tr><td class="label">Member ID:</td><td>{{ member.id }}</td></tr>
+      <tr><td class="label">Name:</td><td>{{ member.name }}</td></tr>
+      <tr><td class="label">Status:</td><td class="{{ 'statusActive' if member.status == 'Active' else 'statusClosed' }}">{{ member.status }}</td></tr>
+    </table>
+  </td></tr>
+</table>
+
+<table class="panel" width="600">
+  <tr><td>
+    <table class="acctTable">
+      <tr>
+        {% for key, label in columns %}
+        <th>
+          {{ label }}
+          <form method="get" action="/member/{{ member.id }}">
+            {{ preserve_filter() }}
+            <input type="hidden" name="sort_col" value="{{ key }}">
+            <input type="hidden" name="sort_dir" value="asc">
+            <button type="submit" class="iconBtn" aria-label="Sort ascending">&#9650;</button>
+          </form>
+          <form method="get" action="/member/{{ member.id }}">
+            {{ preserve_filter() }}
+            <input type="hidden" name="sort_col" value="{{ key }}">
+            <input type="hidden" name="sort_dir" value="desc">
+            <button type="submit" class="iconBtn" aria-label="Sort descending">&#9660;</button>
+          </form>
+          <form method="get" action="/member/{{ member.id }}">
+            {{ preserve_sort() }}
+            {{ preserve_filter() }}
+            <input type="hidden" name="show_filter_for" value="{{ key }}">
+            <button type="submit" class="iconBtn" aria-label="Filter">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            </button>
+          </form>
+          {% if show_filter_for == key %}
+          <br>
+          <form method="get" action="/member/{{ member.id }}">
+            {{ preserve_sort() }}
+            <input type="hidden" name="show_filter_for" value="{{ key }}">
+            <input type="hidden" name="filter_col" value="{{ key }}">
+            <select name="filter_value" onchange="this.form.submit()">
+              {% for v in filter_options %}
+              <option value="{{ v }}" {{ "selected" if v == filter_value else "" }}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </form>
+          {% endif %}
+        </th>
+        {% endfor %}
+      </tr>
+      {% for a in accounts %}
+      <tr>
+        <td>{{ a.type }}</td>
+        <td>{{ a.number }}</td>
+        <td>${{ "%.2f"|format(a.balance) }}</td>
+        <td>{{ a.maturity or "-" }}</td>
+      </tr>
+      {% endfor %}
+      {% if not accounts %}
+      <tr><td colspan="4">&mdash;</td></tr>
+      {% endif %}
+    </table>
+  </td></tr>
+</table>
+
+<table class="panel" width="600">
+  <tr><td>
+    {% if member.status != "Active" %}
+    Account is closed — new sub-accounts cannot be opened for this member.
+    {% elif not may_create_subaccount %}
+    Your role does not permit opening sub-accounts.
+    {% else %}
+    <a href="/member/{{ member.id }}/new-subaccount">Open New Sub-Account</a>
+    {% endif %}
+    &nbsp;|&nbsp; <a href="/">Back to Search</a>
+  </td></tr>
+</table>
+
+</body>
+</html>

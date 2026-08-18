@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<title>CU Member Services - Not Entitled</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; background: #d4d0c8; margin: 0; }
+  table { border-collapse: collapse; }
+  .chrome { background: #003366; }
+  .chrome td { color: white; font-weight: bold; padding: 4px 8px; font-size: 14px; }
+  .chrome td.navLinks { font-weight: normal; font-size: 11px; }
+  .chrome td.navLinks a { color: #cde1f2; text-decoration: none; margin: 0 6px; }
+  .chrome td.globalSearch { text-align: right; font-weight: normal; font-size: 11px; }
+  .panel { background: #ffffff; border: 2px solid #7f9db9; padding: 10px; margin: 10px; }
+  .errorBox { background: #fdd; border: 1px solid #b00; color: #900; padding: 8px 10px; margin: 10px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<table width="100%" class="chrome"><tr>
+  <td width="24%">Member Services Console</td>
+  <td class="navLinks"><a href="/">Member Search</a>&nbsp;|&nbsp;<a href="#">Loans</a>&nbsp;|&nbsp;<a href="#">Cards</a>&nbsp;|&nbsp;<a href="#">Reports</a>&nbsp;|&nbsp;<a href="#">Settings</a></td>
+  <td class="globalSearch" width="30%">
+    {% if operator %}Signed in: {{ operator.display }} ({{ operator.role }}) <a href="/logout" style="color:#cde1f2">Sign out</a>{% endif %}
+    <form method="get" action="/" style="display:inline">
+      <input type="text" name="member_id" size="8"> <input type="submit" value="Search">
+    </form>
+  </td>
+</tr></table>
+
+<table class="errorBox" width="600">
+  <tr><td>
+    {% if not operator.entitlements %}
+    Not Entitled: account {{ operator.display }} has no entitlements for Member Services.
+    This account is not provisioned for this application. Contact an administrator.
+    {% else %}
+    Not Entitled: your role ({{ operator.role }}) does not include the
+    {{ entitlement }} entitlement. Contact an administrator if you believe this is incorrect.
+    {% endif %}
+  </td></tr>
+</table>
+
+<table class="panel" width="600">
+  <tr><td><a href="/">Back to Search</a></td></tr>
+</table>
+
+</body>
+</html>
