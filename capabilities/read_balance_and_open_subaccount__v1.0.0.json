@@ -63,10 +63,10 @@
           "visual": null
         },
         "value": "${input.member_id}",
-        "intent": "Enter member ID to search",
+        "intent": "Type member ID 10234 into Member ID search box",
         "output_key": null
       },
-      "intent": "Enter member ID to search",
+      "intent": "Type member ID 10234 into Member ID search box",
       "recorded_tier": "structural"
     },
     {
@@ -94,10 +94,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Click search to find member",
+        "intent": "Click Search button next to Member ID field",
         "output_key": null
       },
-      "intent": "Click search to find member",
+      "intent": "Click Search button next to Member ID field",
       "recorded_tier": "structural"
     },
     {
@@ -116,10 +116,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open member detail page",
+        "intent": "Open member detail page for 10234",
         "output_key": null
       },
-      "intent": "Open member detail page",
+      "intent": "Open member detail page for 10234",
       "recorded_tier": "semantic"
     },
     {
@@ -147,10 +147,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open filter control for Account Type column",
+        "intent": "Open filter control on Account Type column",
         "output_key": null
       },
-      "intent": "Open filter control for Account Type column",
+      "intent": "Open filter control on Account Type column",
       "recorded_tier": "structural"
     },
     {
@@ -165,23 +165,14 @@
             "row_anchor": null,
             "column": null
           },
-          "structural": {
-            "anchor": {
-              "role": "text",
-              "name": "Account Type",
-              "match": "contains",
-              "row_anchor": null,
-              "column": null
-            },
-            "path": "following:combobox"
-          },
+          "structural": null,
           "visual": null
         },
         "value": "${input.filter_account_type}",
-        "intent": "Select Savings filter option",
+        "intent": "Select Savings option in Account Type filter combobox",
         "output_key": null
       },
-      "intent": "Select Savings filter option",
+      "intent": "Select Savings option in Account Type filter combobox",
       "recorded_tier": "semantic"
     },
     {
@@ -243,23 +234,14 @@
             "row_anchor": null,
             "column": null
           },
-          "structural": {
-            "anchor": {
-              "role": "text",
-              "name": "Account Type:",
-              "match": "contains",
-              "row_anchor": null,
-              "column": null
-            },
-            "path": "following:combobox"
-          },
+          "structural": null,
           "visual": null
         },
         "value": "${input.account_type}",
-        "intent": "Select Money Market account type",
+        "intent": "Select Money Market as account type",
         "output_key": null
       },
-      "intent": "Select Money Market account type",
+      "intent": "Select Money Market as account type",
       "recorded_tier": "semantic"
     },
     {
@@ -287,10 +269,10 @@
           "visual": null
         },
         "value": "${input.initial_deposit}",
-        "intent": "Enter initial deposit amount",
+        "intent": "Enter initial deposit amount of 500",
         "output_key": null
       },
-      "intent": "Enter initial deposit amount",
+      "intent": "Enter initial deposit amount of 500",
       "recorded_tier": "structural"
     },
     {
@@ -309,10 +291,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Submit the new sub-account form",
+        "intent": "Submit new Money Market sub-account request",
         "output_key": null
       },
-      "intent": "Submit the new sub-account form",
+      "intent": "Submit new Money Market sub-account request",
       "recorded_tier": "semantic"
     }
   ],
@@ -327,6 +309,7 @@
     "structural": null,
     "visual": null
   },
+  "commit_step_id": "step_10",
   "restartable_after_recovery": false,
-  "created_at": "2026-08-18T06:13:55.272679Z"
+  "created_at": "2026-08-19T03:48:19.305841Z"
 }

@@ -81,3 +81,28 @@ def test_run_summary_records_input_names_not_values(tmp_path):
     payload = json.loads(path.read_text())
     assert payload["inputs_supplied"] == ["amount", "member_id"]
     assert "10234" not in path.read_text()
+
+
+def test_caller_supplied_extra_is_redacted_too(tmp_path):
+    """The leak that reached disk: the discovery script passes its goal in
+    `extra`, and the goal is built by interpolating the run's parameters —
+    so "Look up member 10234" wrote an id through a field that bypassed
+    redaction. Redaction belongs to the recorder, not to every call site."""
+    recorder = EvidenceRecorder(root=tmp_path, bindings={"member_id": "10234"})
+    path = recorder.write_run(
+        mode="discovery",
+        capability_id="c",
+        capability_version="1.0.0",
+        operator="s.patel",
+        inputs={"member_id": "10234"},
+        extra={
+            "goal": "Look up member 10234 and read their $12,340.55 balance",
+            "nested": {"note": "member 10234"},
+            "turns": 11,
+        },
+    )
+    written = path.read_text()
+    assert "10234" not in written
+    assert "12,340.55" not in written
+    # Non-sensitive values survive untouched.
+    assert json.loads(written)["turns"] == 11

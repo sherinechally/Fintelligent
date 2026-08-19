@@ -211,11 +211,35 @@ class EvidenceRecorder:
         if result is not None:
             summary["result"] = self._describe_result(result)
         if extra:
-            summary.update(extra)
+            # Redacted like everything else. `extra` is caller-supplied, and
+            # the caller is exactly who will forget: the discovery script
+            # passes its goal string, which is built by interpolating the
+            # run's parameters — so "Look up member 10234" put an id on disk
+            # through a field that bypassed redaction entirely.
+            #
+            # Redaction is a property of the recorder, not a discipline
+            # every call site has to remember. Anything reaching this
+            # directory goes through it.
+            summary.update(self._redact_deep(extra))
 
         path = self.dir / "run.json"
         path.write_text(json.dumps(summary, indent=2))
         return path
+
+    def _redact_deep(self, value: Any) -> Any:
+        """Apply redaction through nested structures.
+
+        Bound values become their binding name where we can recognise them
+        (`${input.member_id}` rather than `#####`); everything else is
+        pattern-masked.
+        """
+        if isinstance(value, str):
+            return redact_value(value, self.bindings) if value in self.bindings.values() else redact(value)
+        if isinstance(value, dict):
+            return {k: self._redact_deep(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [self._redact_deep(v) for v in value]
+        return value
 
     @staticmethod
     def _describe_result(result: ReplayResult) -> dict[str, Any]:
