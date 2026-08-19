@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+<title>CU Member Services - Transfer Posted</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; background: #d4d0c8; margin: 0; }
+  table { border-collapse: collapse; }
+  .chrome { background: #003366; }
+  .chrome td { color: white; font-weight: bold; padding: 4px 8px; font-size: 14px; }
+  .chrome td.navLinks { font-weight: normal; font-size: 11px; }
+  .chrome td.navLinks a { color: #cde1f2; text-decoration: none; margin: 0 6px; }
+  .chrome td.globalSearch { text-align: right; font-weight: normal; font-size: 11px; }
+  .panel { background: #ffffff; border: 2px solid #7f9db9; padding: 10px; margin: 10px; }
+  .okBox { background: #dfd; border: 1px solid #060; color: #060; padding: 8px 10px; margin: 10px; font-weight: bold; }
+  .infoTable td { padding: 2px 8px; }
+  .infoTable td.label { font-weight: bold; width: 150px; }
+</style>
+</head>
+<body>
+
+<table width="100%" class="chrome"><tr>
+  <td width="24%">Member Services Console</td>
+  <td class="navLinks"><a href="/">Member Search</a>&nbsp;|&nbsp;<a href="#">Loans</a>&nbsp;|&nbsp;<a href="#">Cards</a>&nbsp;|&nbsp;<a href="#">Reports</a>&nbsp;|&nbsp;<a href="#">Settings</a></td>
+  <td class="globalSearch" width="30%">
+    {% if operator %}Signed in: {{ operator.display }} ({{ operator.role }}) <a href="/logout" style="color:#cde1f2">Sign out</a>{% endif %}
+    <form method="get" action="/" style="display:inline">
+      <input type="text" name="member_id" size="8"> <input type="submit" value="Search">
+    </form>
+  </td>
+</tr></table>
+
+<table class="okBox" width="620"><tr><td>Transfer posted successfully.</td></tr></table>
+
+<table class="panel" width="620">
+  <tr><td>
+    <table class="infoTable">
+      <tr><td class="label">Reference #:</td><td>{{ reference }}</td></tr>
+      <tr><td class="label">Member:</td><td>{{ member.name }} ({{ member.id }})</td></tr>
+      <tr><td class="label">From:</td><td>{{ source.type }} {{ source.number }}</td></tr>
+      <tr><td class="label">To:</td><td>{{ destination.type }} {{ destination.number }}</td></tr>
+      <tr><td class="label">Amount:</td><td>${{ "%.2f"|format(amount) }}</td></tr>
+      <tr><td class="label">New From Balance:</td><td>${{ "%.2f"|format(source.balance) }}</td></tr>
+      <tr><td class="label">New To Balance:</td><td>${{ "%.2f"|format(destination.balance) }}</td></tr>
+    </table>
+  </td></tr>
+</table>
+
+<table class="panel" width="620">
+  <tr><td><a href="/member/{{ member.id }}">Back to Member</a> &nbsp;|&nbsp; <a href="/">New Search</a></td></tr>
+</table>
+
+</body>
+</html>

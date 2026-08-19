@@ -139,6 +139,12 @@ DEFAULT_KNOWN_STATES: tuple[KnownState, ...] = (
         message="This member's account is closed; sub-accounts cannot be opened.",
     ),
     KnownState(
+        code="INSUFFICIENT_FUNDS",
+        kind=StateKind.BUSINESS_OUTCOME,
+        text_signature="Insufficient funds",
+        message="The source account does not hold enough to cover the transfer.",
+    ),
+    KnownState(
         code="DEPOSIT_BELOW_MINIMUM",
         kind=StateKind.BUSINESS_OUTCOME,
         text_signature="Initial deposit must be at least",

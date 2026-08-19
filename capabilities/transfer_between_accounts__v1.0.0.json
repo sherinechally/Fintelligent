@@ -1,0 +1,302 @@
+{
+  "capability_id": "transfer_between_accounts",
+  "version": "1.0.0",
+  "description": "Move funds between two of a member's own accounts and reach the posted-transfer confirmation.",
+  "target_surface": "http://127.0.0.1:5000",
+  "entry_path": "/",
+  "inputs": [
+    {
+      "name": "member_id",
+      "type": "string",
+      "description": "Member to act on.",
+      "required": true
+    },
+    {
+      "name": "from_account",
+      "type": "string",
+      "description": "Source account number.",
+      "required": true
+    },
+    {
+      "name": "to_account",
+      "type": "string",
+      "description": "Destination account number.",
+      "required": true
+    },
+    {
+      "name": "amount",
+      "type": "number",
+      "description": "Amount to move, in dollars.",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "source_balance_before",
+      "type": "string",
+      "description": "Source account balance read before the transfer is posted."
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "step_1",
+      "action": {
+        "verb": "type",
+        "target": {
+          "semantic": {
+            "role": "textbox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Member ID:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:textbox"
+          },
+          "visual": null
+        },
+        "value": "${input.member_id}",
+        "intent": "Enter the member id in the Member ID search box",
+        "output_key": null
+      },
+      "intent": "Enter the member id in the Member ID search box",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_2",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "button",
+            "name": "Search",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Member ID:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:button"
+          },
+          "visual": null
+        },
+        "value": null,
+        "intent": "Search for the member",
+        "output_key": null
+      },
+      "intent": "Search for the member",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_3",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "link",
+            "name": "View",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Open the member's detail page",
+        "output_key": null
+      },
+      "intent": "Open the member's detail page",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_4",
+      "action": {
+        "verb": "read",
+        "target": {
+          "semantic": {
+            "role": null,
+            "name": null,
+            "match": "exact",
+            "row_anchor": {
+              "column": "Number",
+              "equals": "${input.from_account}"
+            },
+            "column": "Balance"
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Read the source account balance before moving anything",
+        "output_key": "source_balance_before"
+      },
+      "intent": "Read the source account balance before moving anything",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_5",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "link",
+            "name": "Transfer Funds",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Open the transfer screen",
+        "output_key": null
+      },
+      "intent": "Open the transfer screen",
+      "recorded_tier": "semantic"
+    },
+    {
+      "step_id": "step_6",
+      "action": {
+        "verb": "select",
+        "target": {
+          "semantic": {
+            "role": "combobox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "From Account:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:combobox"
+          },
+          "visual": null
+        },
+        "value": "${input.from_account}",
+        "intent": "Choose the source account",
+        "output_key": null
+      },
+      "intent": "Choose the source account",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_7",
+      "action": {
+        "verb": "select",
+        "target": {
+          "semantic": {
+            "role": "combobox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "To Account:",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:combobox"
+          },
+          "visual": null
+        },
+        "value": "${input.to_account}",
+        "intent": "Choose the destination account",
+        "output_key": null
+      },
+      "intent": "Choose the destination account",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_8",
+      "action": {
+        "verb": "type",
+        "target": {
+          "semantic": {
+            "role": "textbox",
+            "name": null,
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": {
+            "anchor": {
+              "role": "text",
+              "name": "Transfer Amount",
+              "match": "contains",
+              "row_anchor": null,
+              "column": null
+            },
+            "path": "following:textbox"
+          },
+          "visual": null
+        },
+        "value": "${input.amount}",
+        "intent": "Enter the transfer amount",
+        "output_key": null
+      },
+      "intent": "Enter the transfer amount",
+      "recorded_tier": "structural"
+    },
+    {
+      "step_id": "step_9",
+      "action": {
+        "verb": "click",
+        "target": {
+          "semantic": {
+            "role": "button",
+            "name": "Post Transfer",
+            "match": "exact",
+            "row_anchor": null,
+            "column": null
+          },
+          "structural": null,
+          "visual": null
+        },
+        "value": null,
+        "intent": "Post the transfer",
+        "output_key": null
+      },
+      "intent": "Post the transfer",
+      "recorded_tier": "semantic"
+    }
+  ],
+  "checkpoint": {
+    "semantic": {
+      "role": "text",
+      "name": "Transfer posted successfully",
+      "match": "contains",
+      "row_anchor": null,
+      "column": null
+    },
+    "structural": null,
+    "visual": null
+  },
+  "commit_step_id": "step_9",
+  "restartable_after_recovery": false,
+  "created_at": "2026-08-19T01:40:19.524616Z"
+}

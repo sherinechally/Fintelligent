@@ -248,6 +248,12 @@ class FailureClass(StrEnum):
     capability is provisioned against the wrong operator. The fix belongs to
     whoever configured it, so it must not come back looking like an answer."""
 
+    POLICY_DENIED = "policy_denied"
+    """OUR guardrail stopped this, not the application's. The target app
+    would have performed the action quite happily — the institution's limit
+    lives in the automation layer. Either the value exceeded an absolute
+    ceiling, or it needed human authorisation and the run was unattended."""
+
     RECOVERY_EXHAUSTED = "recovery_exhausted"
     """A recoverable condition was detected and recovery was attempted, but
     the run could not be safely continued afterwards."""

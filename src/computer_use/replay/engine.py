@@ -53,6 +53,7 @@ from computer_use.contracts import (
     Verb,
 )
 from computer_use.escalation.handoff import HandoffCoordinator, build_intervention
+from computer_use.policy.rules import AmountRule, DEFAULT_RULES, Disposition, evaluate
 from computer_use.drivers.playwright_driver import PlaywrightDriver
 from computer_use.replay.known_states import (
     DEFAULT_KNOWN_STATES,
@@ -122,9 +123,13 @@ class ReplayEngine:
         credentials: tuple[str, str] | None = None,
         after_step: "Callable[[int], None] | None" = None,
         handoff: "HandoffCoordinator | None" = None,
+        policy_rules: tuple[AmountRule, ...] = DEFAULT_RULES,
     ) -> None:
         self.driver = driver
         self.known_states = known_states
+        self.policy_rules = policy_rules
+        """Institutional limits, enforced HERE rather than trusted to the
+        target application — which imposes none. See policy/rules.py."""
         self.handoff = handoff
         """When present, conditions replay cannot resolve on its own are
         escalated to a human instead of returned as a dead-end Failure.
@@ -295,6 +300,28 @@ class ReplayEngine:
                 observed=f"missing: {missing}",
             )
         self.steps = []
+
+        # PRE-FLIGHT: absolute limits are checked before the browser is
+        # touched at all, in addition to the gate at the commit step.
+        #
+        # Defence in depth, deliberately: the commit-step gate depends on
+        # the artifact naming its commit step, and an artifact recorded
+        # before that field existed carries None — which silently skipped
+        # the gate entirely. A guardrail that fails OPEN when one field is
+        # missing is not a guardrail. Hard ceilings are re-checked here
+        # where nothing about the artifact can disable them.
+        preflight = evaluate(capability.capability_id, inputs, self.policy_rules)
+        if preflight.disposition is Disposition.DENY:
+            return Failure(
+                failure_class=FailureClass.POLICY_DENIED,
+                phase="policy_preflight",
+                expected=f"{preflight.rule_input} at or below {preflight.rule_threshold}",
+                observed=(
+                    f"{preflight.rule_input}={preflight.observed_value}. {preflight.reason} "
+                    "No in-band approval can override this."
+                ),
+            )
+
         return self._run_steps(capability, inputs, time.monotonic(), restarted=False)
 
     def _run_steps(
@@ -327,6 +354,65 @@ class ReplayEngine:
                     expected=f"a value for input '{e}'",
                     observed="not supplied by the caller",
                 )
+
+            # (2b) POLICY GATE, immediately before the step that commits.
+            #
+            # Checked here rather than at the start of the run so the person
+            # deciding sees everything the flow has already read — the
+            # amount AND the member's balance — instead of a bare number.
+            # Nothing has been committed yet at this point, so declining
+            # costs nothing.
+            # An artifact that doesn't name its commit step falls back to
+            # the last step — the same heuristic build_capability applies,
+            # applied at read time so older artifacts are still gated
+            # rather than silently exempt.
+            commit_step_id = capability.commit_step_id or (
+                capability.steps[-1].step_id if capability.steps else None
+            )
+            if step.step_id == commit_step_id:
+                decision = evaluate(capability.capability_id, inputs, self.policy_rules)
+
+                if decision.disposition is Disposition.DENY:
+                    self._record(seq, step.step_id, action, ok=False, note=f"policy: {decision.reason}")
+                    return Failure(
+                        failure_class=FailureClass.POLICY_DENIED,
+                        step_id=step.step_id,
+                        phase="policy",
+                        expected=f"{decision.rule_input} at or below {decision.rule_threshold}",
+                        observed=(
+                            f"{decision.rule_input}={decision.observed_value}. "
+                            f"{decision.reason} No in-band approval can override this."
+                        ),
+                    )
+
+                if decision.disposition is Disposition.REQUIRE_APPROVAL:
+                    self._record(seq, step.step_id, action, ok=False, note=f"policy: {decision.reason}")
+                    blocked = Failure(
+                        failure_class=FailureClass.POLICY_DENIED,
+                        step_id=step.step_id,
+                        phase="policy",
+                        expected="human authorisation for a high-value action",
+                        observed=f"{decision.reason} (unattended run: no approver available)",
+                    )
+                    approved = self._escalate(
+                        why=StuckReason.RISKY_ACTION_NEEDS_APPROVAL,
+                        step_id=step.step_id,
+                        facts=(
+                            f"about to: {step.intent}",
+                            f"{decision.rule_input} = {decision.observed_value:,.2f}, "
+                            f"above the {decision.rule_threshold:,.0f} unattended limit",
+                            f"risk class: {decision.risk_class.value}",
+                            decision.reason,
+                        )
+                        + tuple(f"already read this run — {k}: {v}" for k, v in outputs.items()),
+                        fallback=blocked,
+                    )
+                    if approved is not None:
+                        return approved
+                    self._record(
+                        seq, step.step_id, action, ok=True,
+                        note="policy: human authorised this action; proceeding",
+                    )
 
             resolution, _ = (
                 self.driver.resolve(action.target)

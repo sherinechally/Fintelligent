@@ -419,6 +419,42 @@ class PlaywrightDriver:
 
         return last_resolution, None
 
+    @staticmethod
+    def _select_option(locator: Locator, wanted: str) -> None:
+        """Pick a dropdown option by label, value, or partial label.
+
+        Three strategies because the two sides of the system see a <select>
+        differently. The LLM perceives an option's visible LABEL, so
+        discovery naturally records that. But a label is display text, and
+        display text moves: this app's account options read
+        "Savings ...4471 ($12340.55)" — the balance is baked into the label
+        and changes after every transfer, so a capability recorded against
+        the label would break the moment it did its job once. The `value`
+        attribute ("...4471") is the stable identifier.
+
+        Rather than force one convention on the recorder, resolve either:
+        exact label (what discovery records), then value (what a
+        hand-authored or corrected artifact would sensibly use), then a
+        partial label match for the case above, where the durable part of
+        the label is a prefix of a volatile whole.
+        """
+        for attempt in (
+            lambda: locator.select_option(label=wanted, timeout=2000),
+            lambda: locator.select_option(value=wanted, timeout=2000),
+            lambda: locator.select_option(
+                label=next(
+                    t for t in locator.locator("option").all_text_contents() if wanted in t
+                ),
+                timeout=2000,
+            ),
+        ):
+            try:
+                attempt()
+                return
+            except Exception:
+                continue
+        raise ValueError(f"no option matched {wanted!r} by label, value, or partial label")
+
     def act(self, action: Action, lease: LeaseToken | None = None) -> ActResult:
         """Resolve the action's target and actually carry it out.
 
@@ -447,7 +483,7 @@ class PlaywrightDriver:
             elif action.verb == Verb.TYPE:
                 locator.fill(action.value or "")
             elif action.verb == Verb.SELECT:
-                locator.select_option(label=action.value or "")
+                self._select_option(locator, action.value or "")
             elif action.verb == Verb.READ:
                 read_value = locator.inner_text()
         except Exception as e:  # a real click/type failure from the live page

@@ -44,7 +44,7 @@ OPERATORS = {
         "password": "demo",
         "display": "S. Patel",
         "role": "Officer",
-        "entitlements": {"MEMBER_VIEW", "SUBACCOUNT_CREATE"},
+        "entitlements": {"MEMBER_VIEW", "SUBACCOUNT_CREATE", "FUNDS_TRANSFER"},
     },
     "t.nguyen": {
         "password": "demo",
@@ -312,6 +312,75 @@ def new_subaccount(member_id: str):
         account_types=ACCOUNT_TYPES,
         error=error,
     )
+
+
+@app.route("/member/<member_id>/transfer", methods=["GET", "POST"])
+def transfer(member_id: str):
+    """Move funds between a member's accounts.
+
+    Note what this route does NOT do: impose an upper limit. It will move
+    any amount the balance covers, without warning or approval. That is
+    deliberate, and it is realistic — plenty of back-office screens will
+    happily do whatever the operator types, with institutional limits
+    enforced by policy and procedure around the system rather than inside
+    it.
+
+    It's also the point of the demo: the automation layer's guardrail has
+    to hold even when the target application offers no guardrail of its own.
+    See src/computer_use/policy/.
+    """
+    member = MEMBERS.get(member_id)
+    if member is None:
+        abort(404)
+
+    denied = deny_if_missing("FUNDS_TRANSFER")
+    if denied:
+        return denied
+
+    if member["status"] != "Active":
+        return render_template("permission_denied.html", member=member), 403
+
+    accounts = member["accounts"]
+    error = None
+
+    if request.method == "POST":
+        from_number = request.form.get("from_account", "")
+        to_number = request.form.get("to_account", "")
+        raw_amount = request.form.get("amount", "").strip()
+
+        source = next((a for a in accounts if a["number"] == from_number), None)
+        destination = next((a for a in accounts if a["number"] == to_number), None)
+
+        try:
+            amount = float(raw_amount)
+        except ValueError:
+            amount = None
+
+        if source is None or destination is None:
+            error = "Select both a source and a destination account."
+        elif source is destination:
+            error = "Source and destination must be different accounts."
+        elif amount is None or amount <= 0:
+            error = f'"{raw_amount}" is not a valid transfer amount.'
+        elif amount > source["balance"]:
+            error = (
+                f"Insufficient funds: {source['type']} {source['number']} holds "
+                f"${source['balance']:.2f}."
+            )
+        else:
+            source["balance"] -= amount
+            destination["balance"] += amount
+            reference = f"TR-{member_id}-{int(time.time()) % 10000:04d}"
+            return render_template(
+                "transfer_confirmation.html",
+                member=member,
+                source=source,
+                destination=destination,
+                amount=amount,
+                reference=reference,
+            )
+
+    return render_template("transfer.html", member=member, accounts=accounts, error=error)
 
 
 if __name__ == "__main__":

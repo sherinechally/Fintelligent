@@ -73,6 +73,20 @@ class Capability(BaseModel):
     """Structured, re-checkable — the same thing discovery itself verified
     before accepting success. Replay resolves this exact reference again."""
 
+    commit_step_id: str | None = None
+    """Which step actually COMMITS — the click that posts the transfer or
+    submits the form. Everything before it is navigation and data entry that
+    can be abandoned harmlessly; this step is the one with consequences.
+
+    Policy requests human approval immediately BEFORE this step, not at the
+    start of the run, so the operator judges with everything the flow has
+    already read in front of them (the amount AND the member's balance).
+
+    Set by build_capability to the final step, which is true for form flows
+    like these. It's a heuristic, stated as one — it lives in the artifact
+    precisely so a human reviewer can correct it for a flow shaped
+    differently."""
+
     restartable_after_recovery: bool = False
     """May replay re-run this capability from step 1 after recovering from a
     session expiry?
@@ -190,6 +204,7 @@ def build_capability(
         ),
         steps=steps,
         checkpoint=result.checkpoint_target,
+        commit_step_id=steps[-1].step_id if steps else None,
     )
 
 
