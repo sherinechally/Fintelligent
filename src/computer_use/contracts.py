@@ -466,3 +466,20 @@ class InterventionRequest(BaseModel):
         HandoffResolution.RESUME,
         HandoffResolution.ABORT,
     )
+
+    def summary_line(self) -> str:
+        """The one-line headline an operator reads first.
+
+        Built ONLY from system-asserted values — the typed stop reason, the
+        step id, the session. Page text is structurally unable to reach this
+        string, no matter what the application renders. That's the point:
+        the headline is where an operator forms their first impression, so
+        it must not be forgeable by whatever the target app happens to
+        display. Page content still reaches them, but as clearly-quoted,
+        clearly-untrusted context (see ContextFragment.source).
+        """
+        bits = [f"[{self.why_stopped}]"]
+        if self.current_step_id:
+            bits.append(f"step={self.current_step_id}")
+        bits.append(f"session={self.session_id}")
+        return " ".join(bits)

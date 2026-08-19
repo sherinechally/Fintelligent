@@ -11,12 +11,16 @@ deliberately use two different mechanisms.
 
 from __future__ import annotations
 
+import uuid
+
 from playwright.sync_api import Browser, Locator, Page, sync_playwright
 
 from computer_use.contracts import (
     Action,
     ActResult,
     ControlRef,
+    Holder,
+    LeaseToken,
     LocatorTier,
     Resolution,
     ResolutionStatus,
@@ -159,14 +163,77 @@ def _resolve_row_anchor_cell(page: Page, column: str, row_equals: str) -> tuple[
     )
 
 
-class PlaywrightDriver:
-    """Owns one browser page: perceives it (snapshot) and acts on it (act)."""
+class LeaseViolation(RuntimeError):
+    """Raised when something tries to act on a session it does not hold."""
 
-    def __init__(self, base_url: str) -> None:
+
+class PlaywrightDriver:
+    """Owns one browser page: perceives it (snapshot) and acts on it (act).
+
+    Also owns the session's LEASE — the single point at which "who is
+    allowed to act right now" is enforced. Everything that acts on this
+    session goes through `act()`, so putting the check there makes control
+    transfer a structural property rather than a convention that every
+    caller has to remember.
+    """
+
+    def __init__(self, base_url: str, session_id: str = "session-1") -> None:
         self.base_url = base_url
+        self.session_id = session_id
         self._playwright = None
         self._browser: Browser | None = None
         self._page: Page | None = None
+
+        # The automation starts out holding the lease. A fresh token is
+        # minted on every transfer, so a stale token can never be replayed
+        # to sneak an action in after control has moved on.
+        self._holder: Holder = Holder.AUTOMATION
+        self._token: str = uuid.uuid4().hex
+
+    # -- lease -------------------------------------------------------------
+
+    @property
+    def holder(self) -> Holder:
+        return self._holder
+
+    def current_lease(self) -> LeaseToken:
+        """The lease as it stands right now. Only useful to whoever already
+        holds it — handing it out doesn't grant anything, because transfer
+        mints a new token and invalidates this one."""
+        return LeaseToken(session_id=self.session_id, holder=self._holder, token=self._token)
+
+    def transfer_lease(self, to: Holder) -> LeaseToken:
+        """Move control. Invalidates every previously issued token."""
+        self._holder = to
+        self._token = uuid.uuid4().hex
+        return self.current_lease()
+
+    def _check_lease(self, lease: LeaseToken | None) -> None:
+        """The one gate. Called by act() before anything touches the page.
+
+        Without this, "pause for the human" is only a convention: a stray
+        retry timer or a racing escalation handler could drive the same
+        banking session while a person is mid-edit, and nothing in the code
+        would stop it. With it, acting without the current lease is
+        impossible rather than merely unlikely.
+        """
+        if lease is None:
+            # No lease supplied: allowed only while the automation still
+            # holds control. Keeps existing callers working, and means the
+            # only way to act during a handoff is to explicitly present the
+            # human's lease.
+            if self._holder is Holder.AUTOMATION:
+                return
+            raise LeaseViolation(
+                f"session {self.session_id} is currently held by {self._holder}; "
+                "an explicit lease is required to act"
+            )
+        if lease.session_id != self.session_id:
+            raise LeaseViolation(f"lease is for {lease.session_id}, not {self.session_id}")
+        if lease.token != self._token:
+            raise LeaseViolation("stale lease token — control has been transferred since it was issued")
+        if lease.holder is not self._holder:
+            raise LeaseViolation(f"lease claims {lease.holder} but session is held by {self._holder}")
 
     def start(self, headless: bool = True, slow_mo: int = 0) -> None:
         """slow_mo pauses between actions (ms) so a human can watch a headed
@@ -352,9 +419,15 @@ class PlaywrightDriver:
 
         return last_resolution, None
 
-    def act(self, action: Action) -> ActResult:
-        """Resolve the action's target and actually carry it out."""
+    def act(self, action: Action, lease: LeaseToken | None = None) -> ActResult:
+        """Resolve the action's target and actually carry it out.
+
+        Refuses if the caller does not hold the session's current lease —
+        see _check_lease. This is the only place actions happen, which is
+        exactly why the check belongs here.
+        """
         assert self._page is not None, "call start() first"
+        self._check_lease(lease)
 
         if action.verb == Verb.NAVIGATE:
             self.goto(action.value or "/")

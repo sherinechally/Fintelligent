@@ -39,16 +39,20 @@ from computer_use.contracts import (
     ControlRef,
     Failure,
     FailureClass,
+    HandoffResolution,
     Holder,
+    LeaseToken,
     LocatorTier,
     ReplayResult,
     ResolutionStatus,
     RowAnchor,
     SemanticRef,
     StepRecord,
+    StuckReason,
     Success,
     Verb,
 )
+from computer_use.escalation.handoff import HandoffCoordinator, build_intervention
 from computer_use.drivers.playwright_driver import PlaywrightDriver
 from computer_use.replay.known_states import (
     DEFAULT_KNOWN_STATES,
@@ -117,9 +121,16 @@ class ReplayEngine:
         known_states: tuple[KnownState, ...] = DEFAULT_KNOWN_STATES,
         credentials: tuple[str, str] | None = None,
         after_step: "Callable[[int], None] | None" = None,
+        handoff: "HandoffCoordinator | None" = None,
     ) -> None:
         self.driver = driver
         self.known_states = known_states
+        self.handoff = handoff
+        """When present, conditions replay cannot resolve on its own are
+        escalated to a human instead of returned as a dead-end Failure.
+        Optional on purpose: unattended replay (the normal production path)
+        has no human to escalate TO, and should fail cleanly rather than
+        block forever waiting for one."""
         self.after_step = after_step
         """Test seam: called with the step number after each step executes.
         Used by the demo script to inject a mid-flow session expiry at a
@@ -134,6 +145,12 @@ class ReplayEngine:
         self.steps: list[StepRecord] = []
         """The run log — same StepRecord shape discovery produces, so a
         replay trace and a discovery trace are directly comparable."""
+        self.lease: LeaseToken | None = None
+        """The lease this engine acts under. None until a handoff happens —
+        while the automation holds control uncontested, act() accepts no
+        lease. After a handoff we carry the FRESH token, so any action
+        queued before the pause is refused by the driver."""
+        self._capability_id = ""
 
     def _page_text(self) -> str:
         assert self.driver._page is not None
@@ -155,7 +172,118 @@ class ReplayEngine:
         except Exception:
             return False
 
+    def _escalate(
+        self,
+        *,
+        why: StuckReason,
+        step_id: str | None,
+        facts: tuple[str, ...],
+        fallback: Failure,
+    ) -> ReplayResult | None:
+        """Hand the live session to a human.
+
+        Returns a terminal result if the run is over (no human available, or
+        the operator aborted), or None if control came back and the run
+        should continue.
+        """
+        if self.handoff is None:
+            # Unattended replay: no one to escalate to. Fail cleanly rather
+            # than block forever waiting for a human who isn't there.
+            return fallback
+
+        request = build_intervention(
+            session_id=self.driver.session_id,
+            why=why,
+            goal=f"replay {self._capability_id}",
+            snapshot=self.driver.snapshot(),
+            current_step_id=step_id,
+            system_facts=facts,
+        )
+        outcome, lease = self.handoff.escalate(request)
+        self.lease = lease  # fresh token; anything minted before is dead
+        self.steps.append(HandoffCoordinator.as_step_record(len(self.steps) + 1, outcome))
+
+        if outcome.resolution is HandoffResolution.ABORT:
+            return Failure(
+                failure_class=fallback.failure_class,
+                step_id=step_id,
+                phase="handoff",
+                expected=fallback.expected,
+                observed=f"operator aborted after taking control: {outcome.operator_note}",
+            )
+        return None
+
+    def _resume_after_handoff(
+        self, capability: Capability, index: int, inputs: dict[str, str]
+    ) -> tuple[ReplayResult | None, int]:
+        """Re-establish where we actually are, and return where to resume.
+
+        The dangerous assumption after a handoff is that the operator did
+        exactly the blocked step and stopped. Two things really happen:
+        they clear the obstacle and leave the step for us, OR they complete
+        it themselves because they are already in the screen. Blindly
+        retrying would repeat a completed action; blindly skipping would
+        miss an incomplete one. On a banking flow the first means a
+        duplicate post.
+
+        So we don't assume — we look, and ask the ARTIFACT where the screen
+        matches:
+
+          - blocked step's target resolves uniquely -> obstacle cleared,
+            the operator left the step for us. Retry it.
+          - it doesn't, but the NEXT step's target does -> the operator
+            completed this step; we are exactly where the next one expects.
+            Skip forward one.
+          - neither -> we genuinely cannot place ourselves. Stop. Guessing
+            here is how a flow silently repeats or skips a write.
+
+        Returns (terminal result or None, index to resume at).
+        """
+        step = capability.steps[index]
+        if step.action.target is None:
+            return None, index
+
+        resolution, _ = self.driver.resolve(step.action.target)
+        if resolution.status is ResolutionStatus.UNIQUE:
+            return None, index  # retry the blocked step
+
+        if index + 1 < len(capability.steps):
+            nxt = capability.steps[index + 1]
+            if nxt.action.target is not None:
+                nxt_resolution, _ = self.driver.resolve(_bind_action(nxt.action, inputs).target)
+                if nxt_resolution.status is ResolutionStatus.UNIQUE:
+                    self.steps.append(
+                        StepRecord(
+                            seq=len(self.steps) + 1,
+                            actor=Holder.AUTOMATION,
+                            step_id=step.step_id,
+                            ok=True,
+                            note=(
+                                "resume: operator completed this step during the handoff "
+                                f"(verified by {nxt.step_id}'s target resolving); skipping it"
+                            ),
+                        )
+                    )
+                    return None, index + 1
+
+        return (
+            Failure(
+                failure_class=FailureClass.RECOVERY_EXHAUSTED,
+                step_id=step.step_id,
+                phase="resume",
+                expected=f"either {step.step_id} or the step after it to be reachable",
+                observed=(
+                    f"after the handoff, {step.step_id}'s target resolves {resolution.status} "
+                    "and the following step's target is not present either — the session is "
+                    "somewhere the recording does not describe. Refusing to guess where to "
+                    "resume rather than risk repeating or skipping a write."
+                ),
+            ),
+            index,
+        )
+
     def run(self, capability: Capability, inputs: dict[str, str]) -> ReplayResult:
+        self._capability_id = capability.capability_id
         # (1) Validate inputs before touching the browser.
         declared = {p.name for p in capability.inputs if p.required}
         missing = sorted(declared - set(inputs))
@@ -181,7 +309,14 @@ class ReplayEngine:
 
         self.driver.goto(capability.entry_path)
 
-        for seq, step in enumerate(capability.steps, start=1):
+        # Index-driven rather than `for ... in`: after a handoff we may need
+        # to RETRY the blocked step or SKIP it, depending on what the
+        # operator actually did — see _resume_after_handoff.
+        index = 0
+        seq = 0
+        while index < len(capability.steps):
+            step = capability.steps[index]
+            seq += 1
             try:
                 action = _bind_action(step.action, inputs)
             except MissingInputError as e:
@@ -202,15 +337,35 @@ class ReplayEngine:
             # (3) Ambiguity stops the run. Never guess.
             if resolution is not None and resolution.status == ResolutionStatus.AMBIGUOUS:
                 self._record(seq, step.step_id, action, ok=False, note="ambiguous target")
-                return Failure(
+                failure = Failure(
                     failure_class=FailureClass.AMBIGUOUS_TARGET,
                     step_id=step.step_id,
                     phase="resolve",
                     expected="exactly one matching control",
                     observed=f"{resolution.candidate_count} controls matched",
                 )
+                escalated = self._escalate(
+                    why=StuckReason.AMBIGUOUS_TARGET,
+                    step_id=step.step_id,
+                    facts=(
+                        f"step {step.step_id}: {step.intent}",
+                        f"{resolution.candidate_count} controls matched a locator that must "
+                        "match exactly one; replay will not choose between them",
+                    ),
+                    fallback=failure,
+                )
+                if escalated is not None:
+                    return escalated
+                # A human took over and handed control back. We do NOT assume
+                # they did exactly this step — see _resume_after_handoff.
+                # Where to pick up depends on what the operator actually
+                # did — never on an assumption.
+                resumed, index = self._resume_after_handoff(capability, index, inputs)
+                if resumed is not None:
+                    return resumed
+                continue
 
-            act_result = self.driver.act(action)
+            act_result = self.driver.act(action, lease=self.lease)
 
             if (
                 resolution is not None
@@ -311,6 +466,8 @@ class ReplayEngine:
 
             if action.verb is Verb.READ and action.output_key:
                 outputs[action.output_key] = act_result.read_value or ""
+
+            index += 1
 
         # Checkpoint: did we actually reach the state the recording ended in?
         check_resolution, _ = self.driver.resolve(capability.checkpoint)
