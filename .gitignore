@@ -19,3 +19,7 @@ __pycache__/
 # Playwright
 playwright-report/
 test-results/
+
+# Screenshots can contain member data that redaction cannot reach (pixels),
+# so they stay local. The structured, redacted evidence IS committed.
+evidence/**/*.png

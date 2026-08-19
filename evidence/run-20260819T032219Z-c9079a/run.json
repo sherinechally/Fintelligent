@@ -1,0 +1,23 @@
+{
+  "run_id": "run-20260819T032219Z-c9079a",
+  "mode": "replay",
+  "recorded_at": "2026-08-19T03:22:19.891126+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "s.patel",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "result": {
+    "kind": "business_outcome",
+    "code": "MEMBER_NOT_FOUND",
+    "message": "No member matches the supplied member_id.",
+    "detected_at_step": "step_2",
+    "partial_outputs": {}
+  }
+}

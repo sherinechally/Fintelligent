@@ -35,6 +35,7 @@ from computer_use.artifact import load_capability
 from computer_use.contracts import BusinessOutcome, Failure, Holder, Success
 from computer_use.drivers.playwright_driver import PlaywrightDriver
 from computer_use.escalation.handoff import CliOperatorConsole, HandoffCoordinator
+from computer_use.evidence.recorder import EvidenceRecorder
 from computer_use.replay.engine import ReplayEngine
 
 BASE_URL = os.environ.get("TARGET_APP_BASE_URL", "http://127.0.0.1:5000")
@@ -84,6 +85,20 @@ def main() -> None:
             handoff=HandoffCoordinator(driver, CliOperatorConsole()),
         )
         result = engine.run(capability, inputs)
+
+        recorder = EvidenceRecorder(bindings=inputs)
+        recorder.write_steps(engine.steps)
+        recorder.write_run(
+            mode="replay-with-handoff",
+            capability_id=capability.capability_id,
+            capability_version=capability.version,
+            operator=operator,
+            inputs=inputs,
+            result=result,
+        )
+        if not isinstance(result, Success):
+            recorder.write_failure_detail(driver.snapshot(), surface_id=driver._page.url)
+        print(f"\nEvidence: {recorder.dir}/")
 
         print()
         print("=" * 72)

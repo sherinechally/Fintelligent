@@ -26,6 +26,7 @@ import os
 from computer_use.agent.discovery import DiscoveryAgent
 from computer_use.artifact import build_capability, save_capability
 from computer_use.drivers.playwright_driver import PlaywrightDriver
+from computer_use.evidence.recorder import EvidenceRecorder
 
 # PARAMS are the concrete values used for THIS run. GOAL embeds them as plain
 # text because the model has to act on real values — it has no notion of a
@@ -146,6 +147,29 @@ def main() -> None:
         else:
             print("Stuck reason:", result.stuck_reason)
             print("Explanation:", result.stuck_explanation)
+
+        # Same recorder, same shapes, both modes — so a discovery trace and
+        # a replay trace of the same flow can be read side by side.
+        recorder = EvidenceRecorder(bindings=PARAMS)
+        recorder.write_steps(result.steps)
+        recorder.write_run(
+            mode="discovery",
+            capability_id="read_balance_and_open_subaccount",
+            capability_version="1.0.0",
+            operator=operator,
+            inputs=PARAMS,
+            extra={
+                "model": agent.model,
+                "goal": GOAL,
+                "ok": result.ok,
+                "llm_turns": len(result.steps),
+                "stuck_reason": result.stuck_reason.value if result.stuck_reason else None,
+                "outputs": {k: "recorded" for k in result.outputs},
+            },
+        )
+        if not result.ok:
+            recorder.write_failure_detail(driver.snapshot(), surface_id=driver._page.url)
+        print(f"Evidence: {recorder.dir}/")
 
         if not args.headless and not args.no_pause:
             # Hold the browser at whatever screen the run ended on — that

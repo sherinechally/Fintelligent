@@ -1,0 +1,25 @@
+{
+  "run_id": "run-20260819T032227Z-8152e7",
+  "mode": "replay",
+  "recorded_at": "2026-08-19T03:22:27.543913+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "s.patel",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "result": {
+    "kind": "business_outcome",
+    "code": "APPROVAL_REQUIRED",
+    "message": "initial_deposit of 40,000.00 is above the 25,000 unattended limit and no approver was available. Re-run with an operator present to have it reviewed.",
+    "detected_at_step": "step_10",
+    "partial_outputs": {
+      "savings_balance": "$#####.##"
+    }
+  }
+}
