@@ -224,17 +224,24 @@ class ReplayEngine:
         why: StuckReason,
         step_id: str | None,
         facts: tuple[str, ...],
-        fallback: Failure,
+        fallback: ReplayResult,
+        declined: ReplayResult | None = None,
     ) -> ReplayResult | None:
         """Hand the live session to a human.
 
-        Returns a terminal result if the run is over (no human available, or
-        the operator aborted), or None if control came back and the run
-        should continue.
+        `fallback` is returned when there is nobody to escalate to;
+        `declined` when a human looked and said no. They are different
+        answers and deserve different results — "no approver was available"
+        is a scheduling fact the caller can act on by re-running attended,
+        while "a reviewer refused this" is a judgement that re-running will
+        not change.
+
+        Returns a terminal result if the run is over, or None if control
+        came back and the run should continue.
         """
         if self.handoff is None:
-            # Unattended replay: no one to escalate to. Fail cleanly rather
-            # than block forever waiting for a human who isn't there.
+            # Unattended replay: no one to escalate to. Return cleanly
+            # rather than block forever waiting for a human who isn't there.
             return fallback
 
         request = build_intervention(
@@ -250,12 +257,20 @@ class ReplayEngine:
         self.steps.append(HandoffCoordinator.as_step_record(len(self.steps) + 1, outcome))
 
         if outcome.resolution is HandoffResolution.ABORT:
+            if declined is not None:
+                # Carry the reviewer's own words through to the caller —
+                # "declined" without a reason forces someone to go hunting
+                # through logs for the one fact that matters.
+                reason = outcome.operator_note or "no reason given"
+                return declined.model_copy(
+                    update={"message": f"{declined.message} Reviewer's reason: {reason}"}
+                )
             return Failure(
-                failure_class=fallback.failure_class,
+                failure_class=getattr(fallback, "failure_class", FailureClass.RECOVERY_EXHAUSTED),
                 step_id=step_id,
                 phase="handoff",
-                expected=fallback.expected,
-                observed=f"operator aborted after taking control: {outcome.operator_note}",
+                expected=getattr(fallback, "expected", ""),
+                observed=f"operator stopped the run after taking control: {outcome.operator_note}",
             )
         return None
 
@@ -353,13 +368,17 @@ class ReplayEngine:
         # where nothing about the artifact can disable them.
         preflight = evaluate(capability.capability_id, inputs, self.policy_rules)
         if preflight.disposition is Disposition.DENY:
-            return Failure(
-                failure_class=FailureClass.POLICY_DENIED,
-                phase="policy_preflight",
-                expected=f"{preflight.rule_input} at or below {preflight.rule_threshold}",
-                observed=(
-                    f"{preflight.rule_input}={preflight.observed_value}. {preflight.reason} "
-                    "No in-band approval can override this."
+            # Same answer the commit-step gate gives, for the same reason:
+            # a limit applying is not a malfunction. Stated identically in
+            # both places so a caller sees one consistent result whichever
+            # check happens to catch it first.
+            return BusinessOutcome(
+                code="EXCEEDS_MAXIMUM",
+                message=(
+                    f"{preflight.rule_input} of {preflight.observed_value:,.2f} is above the "
+                    f"{preflight.rule_threshold:,.0f} maximum this capability will ever perform. "
+                    "This limit cannot be authorised past by an operator; raising it is a "
+                    "policy change."
                 ),
             )
 
@@ -413,33 +432,53 @@ class ReplayEngine:
             if step.step_id == commit_step_id:
                 decision = evaluate(capability.capability_id, inputs, self.policy_rules)
 
+                # A policy stop is a BUSINESS OUTCOME, not a Failure.
+                #
+                # Nothing malfunctioned: a limit applied, or a reviewer
+                # looked at the case and said no. That is the four-eyes
+                # control working exactly as intended, and the answer the
+                # caller needs is "this was refused, here is why" — not an
+                # error that pages an engineer at 3am. The test we apply
+                # throughout: does somebody have to FIX something? For
+                # NOT_ENTITLED, yes (provisioning is wrong) — so that stays
+                # a Failure. Here, no. Nothing is broken.
                 if decision.disposition is Disposition.DENY:
                     self._record(seq, step.step_id, action, ok=False, note=f"policy: {decision.reason}")
-                    return Failure(
-                        failure_class=FailureClass.POLICY_DENIED,
-                        step_id=step.step_id,
-                        phase="policy",
-                        expected=f"{decision.rule_input} at or below {decision.rule_threshold}",
-                        observed=(
-                            f"{decision.rule_input}={decision.observed_value}. "
-                            f"{decision.reason} No in-band approval can override this."
+                    return BusinessOutcome(
+                        code="EXCEEDS_MAXIMUM",
+                        message=(
+                            f"{decision.rule_input} of {decision.observed_value:,.2f} is above the "
+                            f"{decision.rule_threshold:,.0f} maximum this capability will ever "
+                            "perform. This limit cannot be authorised past by an operator; "
+                            "raising it is a policy change."
                         ),
+                        detected_at_step=step.step_id,
+                        partial_outputs=dict(outputs),
                     )
 
                 if decision.disposition is Disposition.REQUIRE_APPROVAL:
                     self._record(seq, step.step_id, action, ok=False, note=f"policy: {decision.reason}")
-                    blocked = Failure(
-                        failure_class=FailureClass.POLICY_DENIED,
-                        step_id=step.step_id,
-                        phase="policy",
-                        expected="human authorisation for a high-value action",
-                        observed=f"{decision.reason} (unattended run: no approver available)",
+                    unattended = BusinessOutcome(
+                        code="APPROVAL_REQUIRED",
+                        message=(
+                            f"{decision.rule_input} of {decision.observed_value:,.2f} is above the "
+                            f"{decision.rule_threshold:,.0f} unattended limit and no approver was "
+                            "available. Re-run with an operator present to have it reviewed."
+                        ),
+                        detected_at_step=step.step_id,
+                        partial_outputs=dict(outputs),
                     )
                     approved = self._escalate(
                         why=StuckReason.RISKY_ACTION_NEEDS_APPROVAL,
                         step_id=step.step_id,
                         facts=self._approval_facts(capability, step, inputs, decision, outputs),
-                        fallback=blocked,
+                        fallback=unattended,
+                        declined=BusinessOutcome(
+                            code="APPROVAL_DECLINED",
+                            message="A reviewer examined this action and declined it.",
+                            detected_at_step=step.step_id,
+                            partial_outputs=dict(outputs),
+                        ),
                     )
                     if approved is not None:
                         return approved
