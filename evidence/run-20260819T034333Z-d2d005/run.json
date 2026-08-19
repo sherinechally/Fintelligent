@@ -1,7 +1,7 @@
 {
-  "run_id": "run-20260819T032221Z-b0a2cd",
+  "run_id": "run-20260819T034333Z-d2d005",
   "mode": "replay",
-  "recorded_at": "2026-08-19T03:22:21.303912+00:00",
+  "recorded_at": "2026-08-19T03:43:33.074256+00:00",
   "capability": {
     "id": "read_balance_and_open_subaccount",
     "version": "1.0.0"
@@ -15,9 +15,9 @@
   ],
   "result": {
     "kind": "business_outcome",
-    "code": "ACCOUNT_CLOSED",
-    "message": "This member's account is closed; sub-accounts cannot be opened.",
-    "detected_at_step": "step_3",
+    "code": "MEMBER_NOT_FOUND",
+    "message": "No member matches the supplied member_id.",
+    "detected_at_step": "step_2",
     "partial_outputs": {}
   }
 }

@@ -1,7 +1,7 @@
 {
-  "run_id": "run-20260819T032227Z-8152e7",
+  "run_id": "run-20260819T034338Z-55ba12",
   "mode": "replay",
-  "recorded_at": "2026-08-19T03:22:27.543913+00:00",
+  "recorded_at": "2026-08-19T03:43:38.664877+00:00",
   "capability": {
     "id": "read_balance_and_open_subaccount",
     "version": "1.0.0"

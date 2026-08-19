@@ -1,8 +1,8 @@
 {
-  "surface": "http://127.0.0.1:####/?member_id=1",
-  "captured_at": "2026-08-19T03:22:24.513573+00:00",
-  "node_count": 33,
-  "text_node_count": 20,
+  "surface": "http://127.0.0.1:####/?member_id=#####",
+  "captured_at": "2026-08-19T03:43:33.080388+00:00",
+  "node_count": 19,
+  "text_node_count": 9,
   "controls": [
     {
       "role": "link",
@@ -35,18 +35,6 @@
     {
       "role": "button",
       "name": "Search"
-    },
-    {
-      "role": "link",
-      "name": "View"
-    },
-    {
-      "role": "link",
-      "name": "View"
-    },
-    {
-      "role": "link",
-      "name": "View"
     },
     {
       "role": "textbox",
