@@ -177,6 +177,47 @@ class ReplayEngine:
         except Exception:
             return False
 
+    @staticmethod
+    def _approval_facts(capability, step, inputs, decision, outputs) -> tuple[str, ...]:
+        """The case an operator is being asked to judge, stated plainly.
+
+        Written to be read under time pressure by someone who did not set
+        the run up. That means: what is about to happen, in what amount,
+        against which account — and, where we can compute it, the
+        COMPARISON that matters rather than two numbers the reader has to
+        subtract themselves. An approval screen that makes the person do
+        arithmetic is an approval screen that gets rubber-stamped.
+        """
+        facts = [
+            f"ACTION: {step.intent}",
+            f"AMOUNT: {decision.observed_value:,.2f}  "
+            f"(unattended limit is {decision.rule_threshold:,.0f})",
+            f"RISK:   {decision.risk_class.value} — {decision.reason}",
+        ]
+        for name in ("member_id", "from_account", "to_account"):
+            if name in inputs:
+                facts.append(f"{name}: {inputs[name]}")
+
+        # Read values, plus the comparison the operator would otherwise have
+        # to do in their head.
+        for key, value in outputs.items():
+            facts.append(f"read during this run — {key}: {value}")
+            try:
+                balance = float(str(value).replace("$", "").replace(",", ""))
+            except ValueError:
+                continue
+            if decision.observed_value is not None and "balance" in key:
+                if decision.observed_value > balance:
+                    facts.append(
+                        f"NOTE: the amount EXCEEDS that balance by "
+                        f"{decision.observed_value - balance:,.2f} — this will not go through"
+                    )
+                else:
+                    facts.append(
+                        f"NOTE: leaves {balance - decision.observed_value:,.2f} in that account"
+                    )
+        return tuple(facts)
+
     def _escalate(
         self,
         *,
@@ -397,14 +438,7 @@ class ReplayEngine:
                     approved = self._escalate(
                         why=StuckReason.RISKY_ACTION_NEEDS_APPROVAL,
                         step_id=step.step_id,
-                        facts=(
-                            f"about to: {step.intent}",
-                            f"{decision.rule_input} = {decision.observed_value:,.2f}, "
-                            f"above the {decision.rule_threshold:,.0f} unattended limit",
-                            f"risk class: {decision.risk_class.value}",
-                            decision.reason,
-                        )
-                        + tuple(f"already read this run — {k}: {v}" for k, v in outputs.items()),
+                        facts=self._approval_facts(capability, step, inputs, decision, outputs),
                         fallback=blocked,
                     )
                     if approved is not None:

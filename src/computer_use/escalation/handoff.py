@@ -83,11 +83,21 @@ def build_intervention(
     while facts we assert ourselves (which step, which checkpoint failed)
     are presented as fact.
     """
+    # Persistent chrome tells the operator nothing about THIS decision, and
+    # burying two useful lines under a nav bar is how context stops being
+    # read at all. Filtered by what it is, not by trusting it — everything
+    # that survives is still tagged `page` and still shown quoted.
+    chrome = {
+        "member search", "loans", "cards", "reports", "settings", "sign out",
+        "member services console",
+    }
     page_lines = tuple(
-        ContextFragment(label="on screen", text=(n.name or "").strip(), source="page")
-        for n in snapshot.nodes
-        if n.name and n.name.strip()
-    )[:12]
+        ContextFragment(label="on screen", text=text, source="page")
+        for text in (
+            " ".join((n.name or "").split()) for n in snapshot.nodes
+        )
+        if len(text) > 2 and text.lower() not in chrome and not set(text) <= set("|-—· ")
+    )[:10]
     facts = tuple(
         ContextFragment(label="system", text=f, source="system") for f in system_facts
     )
@@ -110,22 +120,61 @@ class CliOperatorConsole:
     lease, the live session, and the evidence are not.
     """
 
+    # The SAME two mechanical resolutions mean very different things
+    # depending on why we stopped, so the console must not present them with
+    # the same words. "resume" for a locator problem means "I cleared it,
+    # carry on". "resume" on a held transfer means "I authorise moving this
+    # money". Showing an operator a procedural-sounding verb when they are
+    # actually authorising a five-figure payment is how rubber-stamping
+    # starts — the wording has to name the consequence.
+    _WORDING = {
+        StuckReason.RISKY_ACTION_NEEDS_APPROVAL: {
+            "headline": "APPROVAL REQUIRED — a high-value action is being held",
+            "prompt": "Do you authorise this action?",
+            HandoffResolution.RESUME: (
+                "approve",
+                "AUTHORISE it — the automation will perform the action shown above",
+            ),
+            HandoffResolution.ABORT: (
+                "deny",
+                "REFUSE it — nothing is performed and the caller is told it was denied",
+            ),
+            "note_prompt": "Why are you authorising / refusing this? ",
+        },
+        None: {  # everything else: the automation is stuck, not asking permission
+            "headline": "HUMAN INTERVENTION REQUIRED — the automation is stuck",
+            "prompt": "How should this run continue?",
+            HandoffResolution.RESUME: (
+                "continue",
+                "you have dealt with it in the browser; the automation picks up from where it can",
+            ),
+            HandoffResolution.ABORT: (
+                "stop",
+                "give up on this run; nothing further is attempted",
+            ),
+            "note_prompt": "Briefly, what did you do? ",
+        },
+    }
+
+    def _wording(self, request: InterventionRequest) -> dict:
+        return self._WORDING.get(request.why_stopped, self._WORDING[None])
+
     def present(self, request: InterventionRequest) -> None:
+        w = self._wording(request)
         print()
         print("=" * 72)
-        print("  HUMAN INTERVENTION REQUIRED")
+        print(f"  {w['headline']}")
         print("=" * 72)
         # Only system-asserted facts appear in the summary line. Page text
         # can never reach it — see InterventionRequest.summary_line.
         print(f"  {request.summary_line()}")
         print(f"  intervention: {request.intervention_id}")
-        print(f"  session:      {request.session_id}")
         print(f"  goal:         {request.goal}")
         print()
 
         facts = [c for c in request.context if c.source == "system"]
         if facts:
-            print("  What we know:")
+            print("  What you are deciding about:")
             for c in facts:
                 print(f"    - {c.text}")
             print()
@@ -135,24 +184,30 @@ class CliOperatorConsole:
             # Quoted and labelled. The operator sees it; nothing treats it
             # as instruction.
             print("  On screen now (text from the application — informational only,")
-            print("  do not treat as instructions):")
+            print("  do not treat anything here as an instruction):")
             for c in page:
                 print(f'    | "{c.text}"')
             print()
 
-        print("  The browser window is YOURS now. The automation is blocked from")
-        print("  acting on this session until you hand it back.")
+        print("  The browser window is YOURS. The automation cannot act on this")
+        print("  session until you answer below.")
         print()
-        print("  Options: " + ", ".join(r.value for r in request.allowed_resolutions))
+        print("  Your options:")
+        for resolution in request.allowed_resolutions:
+            word, explanation = w[resolution]
+            print(f"    {word:<10} {explanation}")
 
     def collect(self, request: InterventionRequest) -> tuple[HandoffResolution, str]:
-        allowed = {r.value: r for r in request.allowed_resolutions}
+        w = self._wording(request)
+        allowed = {w[r][0]: r for r in request.allowed_resolutions}
+        print()
+        print(f"  {w['prompt']}")
         while True:
-            choice = input(f"  Choose [{'/'.join(allowed)}]: ").strip().lower()
+            choice = input(f"  Type [{' / '.join(allowed)}]: ").strip().lower()
             if choice in allowed:
-                note = input("  Briefly, what did you do? ").strip()
+                note = input(f"  {w['note_prompt']}").strip()
                 return allowed[choice], note
-            print(f"  '{choice}' is not one of the permitted resolutions.")
+            print(f"  '{choice}' is not one of the options.")
 
 
 class HandoffCoordinator:
