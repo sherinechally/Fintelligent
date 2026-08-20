@@ -1,0 +1,24 @@
+{
+  "run_id": "run-20260820T215306Z-5b753d",
+  "mode": "replay",
+  "recorded_at": "2026-08-20T21:53:06.748694+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "t.nguyen",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "result": {
+    "kind": "failure",
+    "failure_class": "not_entitled",
+    "step_id": "step_3",
+    "phase": "entitlement",
+    "expected": "an operator entitled to perform this capability",
+    "observed": "NOT_ENTITLED: The signed-in operator lacks the entitlement this capability requires. This is a provisioning defect, not an answer about the member."
+  }
+}

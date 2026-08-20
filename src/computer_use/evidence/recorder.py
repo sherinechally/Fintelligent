@@ -78,8 +78,23 @@ class EvidenceRecorder:
             "actor": step.actor.value,
             "step_id": step.step_id,
             "ok": step.ok,
-            "intent": step.intent or None,
-            "note": redact(step.note) or None,
+            # `intent` is NOT written. It is prose the MODEL wrote after
+            # looking at the screen, so it quotes what it saw — "Open member
+            # detail page for J. Alvarez". Substituting bindings catches the
+            # ids and amounts in it; nothing catches the name, for the same
+            # reason nothing caught names in page text.
+            #
+            # This is the provenance rule ContextFragment.source already
+            # applies to operator-facing context, used here: text the SYSTEM
+            # asserts is safe to persist, text a MODEL or a PAGE authored is
+            # not. `note` is system-authored ("policy: above the unattended
+            # limit", "resume: operator completed this step").
+            #
+            # Nothing readable is lost. The step_id joins this line to the
+            # capability's playbook, which carries a reviewed, parameterized
+            # description of what the step means — a better source for that
+            # than a model's improvised narration anyway.
+            "note": self._redact_deep(step.note) or None,
         }
         if action is not None:
             line["action"] = {
@@ -234,7 +249,16 @@ class EvidenceRecorder:
         pattern-masked.
         """
         if isinstance(value, str):
-            return redact_value(value, self.bindings) if value in self.bindings.values() else redact(value)
+            # Substitute bindings ANYWHERE in the string, not only when the
+            # whole string is one. Free text quotes its inputs mid-sentence
+            # ("...for member 10234"), which whole-value matching never saw.
+            # Longest first, so "500" cannot partially rewrite "5000".
+            for name, bound in sorted(
+                self.bindings.items(), key=lambda kv: len(str(kv[1])), reverse=True
+            ):
+                if bound and str(bound) in value:
+                    value = value.replace(str(bound), f"${{input.{name}}}")
+            return redact(value)
         if isinstance(value, dict):
             return {k: self._redact_deep(v) for k, v in value.items()}
         if isinstance(value, (list, tuple)):

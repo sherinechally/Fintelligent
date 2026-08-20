@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 
-from computer_use.contracts import UiNode, UiSnapshot
+from computer_use.contracts import Holder, StepRecord, UiNode, UiSnapshot
 from computer_use.evidence.recorder import EvidenceRecorder
 from computer_use.evidence.redaction import redact, redact_value
 
@@ -106,3 +106,40 @@ def test_caller_supplied_extra_is_redacted_too(tmp_path):
     assert "12,340.55" not in written
     # Non-sensitive values survive untouched.
     assert json.loads(written)["turns"] == 11
+
+
+def test_model_authored_intent_is_not_persisted(tmp_path):
+    """The leak that reached both the artifact and the log.
+
+    `intent` is prose the MODEL wrote after looking at the screen, so it
+    quotes what it saw: "Open member detail page for J. Alvarez". Binding
+    substitution catches the ids in such a string; nothing catches the name,
+    for the same reason nothing caught names in page text. So it is not
+    written at all — the same provenance rule ContextFragment.source applies
+    to operator-facing context.
+    """
+    recorder = EvidenceRecorder(root=tmp_path, bindings={"member_id": "10234"})
+    line = recorder.step_line(
+        StepRecord(
+            seq=1,
+            actor=Holder.AUTOMATION,
+            step_id="step_3",
+            intent="Open member detail page for J. Alvarez (member 10234)",
+            note="policy: above the unattended limit",
+        )
+    )
+    assert "intent" not in line
+    # The system-authored note survives, and the step stays identifiable.
+    assert line["note"] == "policy: above the unattended limit"
+    assert line["step_id"] == "step_3"
+
+
+def test_bindings_are_substituted_inside_free_text(tmp_path):
+    """Whole-value matching missed mid-sentence values: free text says
+    '...for member 10234', not '10234'."""
+    recorder = EvidenceRecorder(root=tmp_path, bindings={"member_id": "10234"})
+    line = recorder.step_line(
+        StepRecord(seq=1, actor=Holder.AUTOMATION, note="searched for member 10234 by id")
+    )
+    assert "10234" not in line["note"]
+    assert "${input.member_id}" in line["note"]

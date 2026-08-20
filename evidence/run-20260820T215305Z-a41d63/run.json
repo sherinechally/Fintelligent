@@ -1,0 +1,24 @@
+{
+  "run_id": "run-20260820T215305Z-a41d63",
+  "mode": "replay",
+  "recorded_at": "2026-08-20T21:53:05.472328+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "s.patel",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "result": {
+    "kind": "failure",
+    "failure_class": "ambiguous_target",
+    "step_id": "step_3",
+    "phase": "resolve",
+    "expected": "exactly one matching control",
+    "observed": "3 controls matched"
+  }
+}

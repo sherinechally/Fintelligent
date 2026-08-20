@@ -45,8 +45,11 @@ with a `ControlRef`, a structured `checkpoint`, `commit_step_id`, and
 **Parameterization happens after the fact, not during discovery.** The model always acts on real
 values — it has to, to operate the page. Once a run succeeds, `build_capability` replaces any
 recorded literal matching an input value with `${input.<name>}`, including nested ones (a row
-anchor's `equals` becomes `${input.filter_account_type}`). The artifact is therefore free of the
-data that produced it by construction rather than by a scrubbing pass.
+anchor's `equals` becomes `${input.filter_account_type}`) — and, since a late fix, inside the
+model's own step descriptions, which is where this claim was previously false. Whole-value
+substitution rewrote `value` fields and locator names but never touched prose, so every artifact
+carried `"intent": "Open member detail page for member 10234"`: free of the data that produced it
+everywhere except the one field nobody thought of as data.
 
 **Only steps that actually succeeded are persisted.** The brief asks for "the successful run …
 decoupled from the raw model transcript", and this filter is what makes that true. Our own
@@ -247,6 +250,15 @@ which is safer *and* more informative. Two real leaks were found by scanning gen
 for known sensitive strings: failure detail persisted page text (and so members' names, while the
 module docstring directly above it claimed otherwise), and URLs went unredacted (`/member/10234`
 identifies a person as surely as a name field). Both are now pinned by tests.
+
+**Free text is judged by who wrote it, not by what it looks like.** `ContextFragment.source`
+already distinguishes system-asserted context from page-authored context for the operator console;
+evidence applies the same rule. A step's `note` is system-authored ("policy: above the unattended
+limit") and is persisted; its `intent` is prose the *model* wrote after reading the screen, quoting
+what it saw ("Open member detail page for J. Alvarez"), and is not. Binding substitution catches
+the ids in such a string and nothing catches the name — so the defence is again structural. The
+step id joins the log line to the capability's playbook, which carries a reviewed description of
+what the step means; nothing readable is lost.
 
 **The honest limit:** pattern matching cannot find a *name*. That is exactly why the defence is
 structural — don't persist free text — rather than a scrubber that would quietly fail on the one

@@ -103,13 +103,36 @@ class Capability(BaseModel):
 
 
 def _parameterize_string(value: str | None, value_to_param: dict[str, str]) -> str | None:
+    """Whole-value substitution: a field that IS an input becomes a binding."""
     if value is None:
         return None
     return f"${{input.{value_to_param[value]}}}" if value in value_to_param else value
 
 
+def _parameterize_prose(text: str | None, value_to_param: dict[str, str]) -> str | None:
+    """Substitution INSIDE free text, for the model's own step descriptions.
+
+    Intents are prose the model wrote after looking at the screen, so they
+    quote what it saw: "Open member detail page for member 10234". Whole-value
+    substitution never touched them, which meant a member id sat in every
+    artifact — in the same file whose docstring says it is free of the data
+    that produced it. It was free of it everywhere except the one field
+    nobody thought of as data.
+
+    Longest values first, so a parameter that contains another ("500" inside
+    "5000") cannot be partially rewritten by the shorter one.
+    """
+    if text is None:
+        return None
+    for literal in sorted(value_to_param, key=len, reverse=True):
+        if literal and literal in text:
+            text = text.replace(literal, f"${{input.{value_to_param[literal]}}}")
+    return text
+
+
 def _parameterize_action(action: Action, value_to_param: dict[str, str]) -> Action:
     new_value = _parameterize_string(action.value, value_to_param)
+    new_intent = _parameterize_prose(action.intent, value_to_param)
 
     new_target = action.target
     if action.target is not None and action.target.semantic is not None:
@@ -130,9 +153,11 @@ def _parameterize_action(action: Action, value_to_param: dict[str, str]) -> Acti
                 visual=action.target.visual,
             )
 
-    if new_value == action.value and new_target == action.target:
+    if new_value == action.value and new_target == action.target and new_intent == action.intent:
         return action
-    return action.model_copy(update={"value": new_value, "target": new_target})
+    return action.model_copy(
+        update={"value": new_value, "target": new_target, "intent": new_intent}
+    )
 
 
 def build_capability(
@@ -180,7 +205,7 @@ def build_capability(
         CapabilityStep(
             step_id=f"step_{n}",
             action=_parameterize_action(step.action, value_to_param),
-            intent=step.intent,
+            intent=_parameterize_prose(step.intent, value_to_param),
             recorded_tier=step.resolution.tier if step.resolution else None,
         )
         for n, step in enumerate(

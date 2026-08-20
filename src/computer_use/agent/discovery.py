@@ -287,7 +287,10 @@ class DiscoveryAgent:
 
                 if verification.status == ResolutionStatus.UNIQUE:
                     steps.append(
-                        StepRecord(seq=step_num, actor=Holder.AUTOMATION, ok=True, note=f"finish_success (verified): {primary.input.get('summary', '')}")
+                        # The model's summary is prose about what it saw, so
+                        # it stays in the returned result and out of the
+                        # persisted log — see evidence/recorder.py.
+                        StepRecord(seq=step_num, actor=Holder.AUTOMATION, ok=True, note="finish_success: checkpoint verified")
                     )
                     return DiscoveryResult(
                         ok=True,
@@ -332,7 +335,7 @@ class DiscoveryAgent:
 
             if primary.name == "finish_stuck":
                 steps.append(
-                    StepRecord(seq=step_num, actor=Holder.AUTOMATION, ok=False, note=f"finish_stuck: {primary.input.get('explanation', '')}")
+                    StepRecord(seq=step_num, actor=Holder.AUTOMATION, ok=False, note=f"finish_stuck: {primary.input.get('reason', 'unspecified')}")
                 )
                 return DiscoveryResult(
                     ok=False,
