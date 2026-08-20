@@ -1,7 +1,4 @@
-# Understudy
-
-*Learns the part once by watching. Performs it the same way every night. Steps aside the moment
-someone senior walks on.*
+# Computer-Use Automation System
 
 An LLM works out how to operate a legacy back-office UI **once**. That run becomes a typed,
 versioned **capability artifact**. From then on the flow is replayed **deterministically, with no
