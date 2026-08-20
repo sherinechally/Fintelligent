@@ -137,18 +137,38 @@ which tiers exist but **not their precedence** — precedence is a property the 
 because it is a property of the surface. A capability recorded on the web must not carry the web's
 assumptions.
 
-**Multi-tenant reuse.** Tenants running the same vendor product share a capability; they differ in
-configuration, not in flow. The intended shape:
+**Multi-tenant reuse — built and demonstrated.** `scripts/run_cross_tenant_demo.py` runs one
+recorded capability against two institutions running the same product, where the second has
+relabelled it (Search→Find, View→Open, the Account Type column→Product, the sub-account
+link→Add Sub-Account). The mock app is one codebase driven by a tenant config, because that is
+how a vendor product is actually deployed — not a second app pretending to be one.
 
-- A **base capability** per vendor product, plus a **per-tenant override** file supplying only the
-  `ControlRef`s that differ. Nothing is re-recorded per tenant; a tenant that renamed "Search" to
-  "Find Member" overrides one locator.
-- **Drift detection is already free.** `recorded_tier` versus what actually resolves tells you
-  tenant 042 has drifted *while the fallback is still holding* — before it breaks.
-- `known_states.py` and `policy/rules.py` become per-tenant configuration rather than code. Both
-  are already plain declarative tables for this reason.
+The overrides are a **label map**, not per-step patches:
 
-Not built. What is built is the shape that makes it a config change rather than a rewrite.
+```json
+{"Search": "Find", "View": "Open", "Account Type": "Product"}
+```
+
+Per-step patches (`step_2: use this locator`) tie overrides to step *numbers*, so every tenant's
+config silently rots the next time the base is re-recorded. A label map is stated in the base's
+own vocabulary: it survives re-recording, applies wherever the label occurs, and is legible to
+whoever administers the tenant rather than only to whoever wrote the automation. A renamed
+**column header** is handled the same way, because a row anchor matches on header text — and the
+row's *value* is deliberately not rewritten, since that is member data rather than a label.
+`step_overrides` remains for a control that genuinely moved rather than merely got renamed.
+
+The demo deliberately runs the un-overridden case too, and it is the most informative of the
+three: against Harborlight with no config, `step_1` still resolves — it is anchored to
+"Member ID:", which that tenant did not rename — and the run fails at `step_2` naming the exact
+control it could not find. Some drift is absorbed by the structural tier for free; the rest costs
+four lines. **Onboarding this institution: one recording, four lines of config.**
+
+**Drift detection is already free.** `recorded_tier` versus what actually resolves tells you
+tenant 042 has drifted *while the fallback is still holding* — before it breaks.
+
+Still config-as-code rather than a service: `known_states.py` and `policy/rules.py` would become
+per-tenant data alongside the label map. Both are already plain declarative tables for that
+reason.
 
 ---
 
@@ -237,8 +257,10 @@ operator reads first. It still reaches them — quoted and labelled untrusted.
 
 - **Visual locator tier.** In the schema, unimplemented. It only earns its place on canvas-rendered
   or thick-client surfaces; on this one it would be dead code that looked like coverage.
-- **Multi-tenant override files.** Designed above, not built. Building tenant plumbing for one
-  tenant would be the premature infrastructure the brief warns against.
+- **A tenant registry / control plane.** Label maps are files loaded by a script. Serving them
+  from a registry, versioning them per vendor release, and reconciling them at scale is the
+  infrastructure the brief warns against building prematurely — the mechanism is proven with two
+  tenants; the plumbing is not the interesting part.
 - **A desktop/terminal driver.** The seam is real and the tier-inversion argument is worked out;
   the implementation is a second driver, not a redesign.
 - **Semantic/embedding-based locator fallback ("RAG-adjacent").** Considered for the case where a
@@ -255,9 +277,10 @@ operator reads first. It still reaches them — quoted and labelled untrusted.
 
 **What I'd build next, in order:**
 
-1. **Per-tenant overrides plus a drift dashboard.** The signal is already collected; nothing
-   consumes it. This is the highest-value next step because it converts a working single-tenant
-   system into the multi-tenant one the environment actually needs.
+1. **A drift dashboard.** `recorded_tier` mismatches are already collected per run and nothing
+   consumes them. Aggregated across tenants this is an early-warning system: it says which
+   institutions have drifted while their fallbacks still hold, which is the difference between
+   scheduled maintenance and a 2am page.
 2. **Checkpoint reconciliation after handoff.** Turns "refuse to resume" into "determine where we
    are and resume safely" — the honest fix for the biggest remaining stop condition.
 3. **An agent-facing capability catalog.** Artifacts are already typed and named; exposing them as

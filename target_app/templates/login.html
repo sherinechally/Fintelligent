@@ -5,7 +5,7 @@
 <style>
   body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; background: #d4d0c8; margin: 0; }
   table { border-collapse: collapse; }
-  .chrome { background: #003366; }
+  .chrome { background: {{ T.accent }}; }
   .chrome td { color: white; font-weight: bold; padding: 4px 8px; font-size: 14px; }
   .panel { background: #ffffff; border: 2px solid #7f9db9; padding: 10px; margin: 10px; }
   .formTable td { padding: 4px 8px; }
@@ -17,7 +17,7 @@
 </head>
 <body>
 
-<table width="100%" class="chrome"><tr><td>Member Services Console</td></tr></table>
+<table width="100%" class="chrome"><tr><td>{{ T.console }}</td></tr></table>
 
 {% if expired %}
 <table class="warnBox" width="440">

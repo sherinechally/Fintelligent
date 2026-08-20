@@ -22,12 +22,59 @@ see src/computer_use/replay/known_states.py.
 
 from __future__ import annotations
 
+import os
 import time
 
 from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 app = Flask(__name__)
 app.secret_key = "mock-app-not-a-real-secret"  # local demo only; nothing sensitive
+
+# ONE codebase, configured per institution — which is exactly how a real
+# vendor product is deployed, and exactly why a capability recorded at one
+# institution has to cope with another's wording. Switching TENANT gives a
+# genuinely different-looking install of the same software, rather than a
+# second app that merely pretends to be one.
+TENANTS = {
+    "northbay": {
+        "display_name": "Northbay Credit Union",
+        "console": "Member Services Console",
+        "labels": {
+            "search": "Search",
+            "view": "View",
+            "account_type_column": "Account Type",
+            "number_column": "Number",
+            "balance_column": "Balance",
+            "maturity_column": "Maturity",
+            "open_subaccount": "Open New Sub-Account",
+            "transfer": "Transfer Funds",
+            "submit": "Submit",
+            "post_transfer": "Post Transfer",
+        },
+        "accent": "#003366",
+    },
+    "harborlight": {
+        "display_name": "Harborlight Federal",
+        "console": "Servicing Workbench",
+        "labels": {
+            # Same functions, this institution's vocabulary.
+            "search": "Find",
+            "view": "Open",
+            "account_type_column": "Product",
+            "number_column": "Acct No.",
+            "balance_column": "Balance",
+            "maturity_column": "Matures",
+            "open_subaccount": "Add Sub-Account",
+            "transfer": "Move Funds",
+            "submit": "Submit",
+            "post_transfer": "Post Transfer",
+        },
+        "accent": "#4a5d23",
+    },
+}
+
+TENANT_ID = os.environ.get("TENANT", "northbay")
+TENANT = TENANTS[TENANT_ID]
 
 # Three operators, differing ONLY in entitlements — authentication succeeds
 # for all three, and authorization is what separates them. Passwords are
@@ -109,7 +156,11 @@ def login():
 def inject_operator():
     """Every page's header shows who is signed in — which is also what
     makes UiSnapshot.principal observable to the automation."""
-    return {"operator": current_operator()}
+    return {
+        "operator": current_operator(),
+        "T": TENANT,
+        "L": TENANT["labels"],
+    }
 
 
 @app.route("/logout")
@@ -198,7 +249,17 @@ def search():
     return render_template("search.html", query=query, results=results, searched=searched)
 
 
-ACCOUNT_COLUMNS = [("type", "Account Type"), ("number", "Number"), ("balance", "Balance"), ("maturity", "Maturity")]
+def account_columns() -> list[tuple[str, str]]:
+    """Column keys are stable; their HEADINGS are the tenant's wording. The
+    row-anchor locator matches on heading text, so a renamed column is
+    exactly the drift a tenant override has to absorb."""
+    lab = TENANT["labels"]
+    return [
+        ("type", lab["account_type_column"]),
+        ("number", lab["number_column"]),
+        ("balance", lab["balance_column"]),
+        ("maturity", lab["maturity_column"]),
+    ]
 
 
 @app.route("/member/<member_id>")
@@ -242,7 +303,7 @@ def detail(member_id: str):
         member=member,
         accounts=accounts,
         may_create_subaccount="SUBACCOUNT_CREATE" in current_operator()["entitlements"],
-        columns=ACCOUNT_COLUMNS,
+        columns=account_columns(),
         sort_col=sort_col,
         sort_dir=sort_dir,
         filter_col=filter_col,
@@ -387,4 +448,4 @@ if __name__ == "__main__":
     # use_reloader=False: the reloader spawns a second child process, which
     # made it easy to lose track of which process actually owned port 5000
     # during manual testing. Single process only; restart manually on edits.
-    app.run(port=5000, debug=True, use_reloader=False)
+    app.run(port=int(os.environ.get("PORT", "5000")), debug=True, use_reloader=False)

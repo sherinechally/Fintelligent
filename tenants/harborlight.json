@@ -1,0 +1,11 @@
+{
+  "tenant_id": "harborlight",
+  "display_name": "Harborlight Federal",
+  "target_surface": "http://127.0.0.1:5001",
+  "label_map": {
+    "Search": "Find",
+    "View": "Open",
+    "Account Type": "Product",
+    "Open New Sub-Account": "Add Sub-Account"
+  }
+}

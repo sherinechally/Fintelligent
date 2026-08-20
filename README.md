@@ -137,6 +137,27 @@ Under the limit — never stops.
 ```
 Above the absolute ceiling — refused outright, and **no operator can approve past it**.
 
+### Cross-tenant reuse
+
+One recording, two institutions running the same product. Start the second tenant alongside the
+first:
+
+```bash
+TENANT=harborlight PORT=5001 .venv/bin/python target_app/app.py
+```
+
+Harborlight has relabelled the product — "Search" is "Find", "View" is "Open", the Account Type
+column is "Product". Same flow, different words. Then:
+
+```bash
+.venv/bin/python scripts/run_cross_tenant_demo.py
+```
+
+Runs the **same artifact** three ways: against Northbay (works), against Harborlight with no
+config (fails, naming the exact control it couldn't find — while the steps anchored to unchanged
+labels resolve anyway), and against Harborlight with its label map (works). Onboarding that
+institution costs four lines of config, not a re-recording.
+
 ### Tests
 
 ```bash
@@ -155,10 +176,12 @@ src/computer_use/
   agent/discovery.py    the only place a model makes decisions
   replay/               deterministic executor + the known-states guard
   policy/               institutional limits, enforced here rather than by the app
+  tenants.py            one capability, many institutions: label maps + specialization
   escalation/           intervention requests and live-session control transfer
   evidence/             structured run logs + redaction
 target_app/             the mock back office being automated
 capabilities/           saved artifacts
+tenants/                per-institution label maps
 evidence/               run logs (redacted; committed deliberately)
 ```
 

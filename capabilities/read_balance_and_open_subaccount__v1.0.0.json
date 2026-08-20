@@ -94,10 +94,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Click Search button next to Member ID field",
+        "intent": "Click Search button next to Member ID",
         "output_key": null
       },
-      "intent": "Click Search button next to Member ID field",
+      "intent": "Click Search button next to Member ID",
       "recorded_tier": "structural"
     },
     {
@@ -116,10 +116,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open member detail page for 10234",
+        "intent": "Open member detail page for J. Alvarez",
         "output_key": null
       },
-      "intent": "Open member detail page for 10234",
+      "intent": "Open member detail page for J. Alvarez",
       "recorded_tier": "semantic"
     },
     {
@@ -147,10 +147,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open filter control on Account Type column",
+        "intent": "Click the Filter icon under the Account Type column",
         "output_key": null
       },
-      "intent": "Open filter control on Account Type column",
+      "intent": "Click the Filter icon under the Account Type column",
       "recorded_tier": "structural"
     },
     {
@@ -169,10 +169,10 @@
           "visual": null
         },
         "value": "${input.filter_account_type}",
-        "intent": "Select Savings option in Account Type filter combobox",
+        "intent": "Select Savings in the Account Type filter combobox",
         "output_key": null
       },
-      "intent": "Select Savings option in Account Type filter combobox",
+      "intent": "Select Savings in the Account Type filter combobox",
       "recorded_tier": "semantic"
     },
     {
@@ -216,10 +216,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open new sub-account form",
+        "intent": "Open the new sub-account creation flow",
         "output_key": null
       },
-      "intent": "Open new sub-account form",
+      "intent": "Open the new sub-account creation flow",
       "recorded_tier": "semantic"
     },
     {
@@ -238,10 +238,10 @@
           "visual": null
         },
         "value": "${input.account_type}",
-        "intent": "Select Money Market as account type",
+        "intent": "Select Money Market as the account type",
         "output_key": null
       },
-      "intent": "Select Money Market as account type",
+      "intent": "Select Money Market as the account type",
       "recorded_tier": "semantic"
     },
     {
@@ -291,10 +291,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Submit new Money Market sub-account request",
+        "intent": "Submit the new sub-account form",
         "output_key": null
       },
-      "intent": "Submit new Money Market sub-account request",
+      "intent": "Submit the new sub-account form",
       "recorded_tier": "semantic"
     }
   ],
@@ -311,5 +311,5 @@
   },
   "commit_step_id": "step_10",
   "restartable_after_recovery": false,
-  "created_at": "2026-08-19T03:48:19.305841Z"
+  "created_at": "2026-08-19T03:55:18.136524Z"
 }
