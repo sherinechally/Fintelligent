@@ -1,0 +1,23 @@
+{
+  "run_id": "run-20260820T181101Z-16d01b",
+  "mode": "replay",
+  "recorded_at": "2026-08-20T18:11:01.956359+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "s.patel",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "result": {
+    "kind": "business_outcome",
+    "code": "ACCOUNT_CLOSED",
+    "message": "This member's account is closed; sub-accounts cannot be opened.",
+    "detected_at_step": "step_3",
+    "partial_outputs": {}
+  }
+}

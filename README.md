@@ -47,7 +47,37 @@ demo.
 
 ---
 
+## Quickest look
+
+One command. Boots both mock installs, walks every outcome the system can produce, tears the
+servers down again. No API key needed — this is all the deterministic path.
+
+```bash
+.venv/bin/python scripts/demo_all.py
+```
+
+```
+  PASS  happy path                                   -> RESULT: SUCCESS
+  PASS  member not found                             -> MEMBER_NOT_FOUND
+  PASS  closed account                               -> ACCOUNT_CLOSED
+  PASS  deposit below minimum                        -> DEPOSIT_BELOW_MINIMUM
+  PASS  ambiguous target (3 members match)           -> ambiguous_target
+  PASS  operator not entitled                        -> not_entitled
+  PASS  operator not provisioned                     -> not_entitled
+  PASS  session expires mid-flow                     -> recovery_exhausted
+  PASS  high-value, unattended                       -> APPROVAL_REQUIRED
+  PASS  same artifact, both installs                 -> One recording. Two institutions.
+```
+
+The rest of this README is the same material one piece at a time, if you want to watch any of it
+happen in a browser.
+
+---
+
 ## Running it
+
+(`demo_all.py` starts and stops these for you; do it by hand only if you want to click around
+the app yourself.)
 
 **1. Start the target app** (leave it running):
 
