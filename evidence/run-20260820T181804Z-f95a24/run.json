@@ -1,0 +1,24 @@
+{
+  "run_id": "run-20260820T181804Z-f95a24",
+  "mode": "replay",
+  "recorded_at": "2026-08-20T18:18:04.630885+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "s.patel",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "result": {
+    "kind": "success",
+    "outputs": {
+      "savings_balance": "$#####.##"
+    },
+    "duration_ms": 450,
+    "drifted_steps": {}
+  }
+}

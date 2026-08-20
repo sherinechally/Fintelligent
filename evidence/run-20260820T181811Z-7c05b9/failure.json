@@ -1,0 +1,92 @@
+{
+  "surface": "http://127.0.0.1:####/member/#####",
+  "captured_at": "2026-08-20T18:18:11.352024+00:00",
+  "node_count": 54,
+  "text_node_count": 33,
+  "controls": [
+    {
+      "role": "link",
+      "name": "Member Search"
+    },
+    {
+      "role": "link",
+      "name": "Loans"
+    },
+    {
+      "role": "link",
+      "name": "Cards"
+    },
+    {
+      "role": "link",
+      "name": "Reports"
+    },
+    {
+      "role": "link",
+      "name": "Settings"
+    },
+    {
+      "role": "link",
+      "name": "Sign out"
+    },
+    {
+      "role": "link",
+      "name": "Back to Search"
+    },
+    {
+      "role": "textbox",
+      "name": null
+    },
+    {
+      "role": "button",
+      "name": "Search"
+    },
+    {
+      "role": "button",
+      "name": "Sort ascending"
+    },
+    {
+      "role": "button",
+      "name": "Sort descending"
+    },
+    {
+      "role": "button",
+      "name": "Filter"
+    },
+    {
+      "role": "button",
+      "name": "Sort ascending"
+    },
+    {
+      "role": "button",
+      "name": "Sort descending"
+    },
+    {
+      "role": "button",
+      "name": "Filter"
+    },
+    {
+      "role": "button",
+      "name": "Sort ascending"
+    },
+    {
+      "role": "button",
+      "name": "Sort descending"
+    },
+    {
+      "role": "button",
+      "name": "Filter"
+    },
+    {
+      "role": "button",
+      "name": "Sort ascending"
+    },
+    {
+      "role": "button",
+      "name": "Sort descending"
+    },
+    {
+      "role": "button",
+      "name": "Filter"
+    }
+  ]
+}

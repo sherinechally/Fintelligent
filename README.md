@@ -56,6 +56,18 @@ servers down again. No API key needed — this is all the deterministic path.
 .venv/bin/python scripts/demo_all.py
 ```
 
+A Chromium window opens and **captions each scenario on the page** as it runs — what is being
+demonstrated and what should happen. The caption is `aria-hidden`, so it is invisible to the
+automation's own perception; a demo that changed what the agent sees would be demonstrating the
+demo. (`tests/test_narration.py` pins that.)
+
+Or skip the watching:
+
+```bash
+.venv/bin/python scripts/demo_all.py --fast     # headless, ~20s
+.venv/bin/python scripts/demo_all.py --only 5   # just the ambiguous-target one
+```
+
 ```
   PASS  happy path                                   -> RESULT: SUCCESS
   PASS  member not found                             -> MEMBER_NOT_FOUND

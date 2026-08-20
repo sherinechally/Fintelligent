@@ -1,0 +1,1 @@
+{"seq": 1, "actor": "automation", "step_id": "step_1", "ok": true, "intent": "Type member ID 10234 into Member ID search box", "action": {"verb": "type", "value": "${input.member_id}", "output_key": null, "target": {"semantic": {"role": "textbox", "match": "exact"}, "structural": {"anchor_text": "Member ID:", "path": "following:textbox"}}}}

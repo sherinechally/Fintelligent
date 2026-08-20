@@ -190,6 +190,77 @@ class PlaywrightDriver:
         self._holder: Holder = Holder.AUTOMATION
         self._token: str = uuid.uuid4().hex
 
+    # -- narration (demo only) ---------------------------------------------
+
+    def narrate(self, title: str, detail: str = "", tone: str = "info") -> None:
+        """Pin a caption over the page describing what is being demonstrated.
+
+        Purely an aid for watching a headed run — nothing reads it back and
+        no automation targets it. Injected as an init script rather than a
+        one-off DOM insert so it survives the navigations the flow performs;
+        a caption that vanishes on the first click would caption nothing.
+
+        It must not change what the AUTOMATION sees, or the demo would be
+        demonstrating the demo. `aria-hidden="true"` is what achieves that:
+        it removes the subtree from the accessibility tree, which is the
+        exact surface `snapshot()` reads.
+
+        A shadow root alone does NOT achieve it — shadow DOM encapsulates
+        markup and styles, not accessibility, and its content is exposed to
+        assistive technology by design. The first version of this method
+        relied on that and silently added two nodes to every observation.
+        The shadow root is retained for style isolation only; `aria-hidden`
+        is the part doing the work, and `test_narration_is_invisible_to_the_agent`
+        pins it.
+        """
+        assert self._page is not None, "call start() first"
+        colours = {"info": "#003366", "good": "#0a6", "stop": "#b00"}
+        script = """
+        (() => {
+          const render = () => {
+            if (!document.body) return;
+            let host = document.getElementById('__demo_banner');
+            if (!host) {
+              host = document.createElement('div');
+              host.id = '__demo_banner';
+              // The line that keeps narration out of what the agent sees.
+              host.setAttribute('aria-hidden', 'true');
+              host.setAttribute('role', 'presentation');
+              host.attachShadow({mode: 'open'});
+              document.documentElement.appendChild(host);
+            }
+            host.shadowRoot.innerHTML = `
+              <div style="position:fixed;top:0;left:0;right:0;z-index:2147483647;
+                          background:%COLOUR%;color:#fff;font:13px/1.5 Arial,sans-serif;
+                          padding:8px 14px;box-shadow:0 2px 6px rgba(0,0,0,.35)">
+                <b>%TITLE%</b>%DETAIL%
+              </div>`;
+            document.documentElement.style.paddingTop = '42px';
+          };
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', render);
+          } else { render(); }
+          render();
+        })();
+        """
+        escaped_title = title.replace("`", "'").replace("\\", "")
+        escaped_detail = detail.replace("`", "'").replace("\\", "")
+        script = (
+            script.replace("%COLOUR%", colours.get(tone, colours["info"]))
+            .replace("%TITLE%", escaped_title)
+            .replace(
+                "%DETAIL%",
+                f"<span style='opacity:.85'> — {escaped_detail}</span>" if escaped_detail else "",
+            )
+        )
+        # Applies to every subsequent navigation...
+        self._page.add_init_script(script)
+        # ...and to the page already on screen.
+        try:
+            self._page.evaluate(script)
+        except Exception:
+            pass
+
     # -- lease -------------------------------------------------------------
 
     @property

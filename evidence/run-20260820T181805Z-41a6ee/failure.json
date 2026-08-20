@@ -1,0 +1,48 @@
+{
+  "surface": "http://127.0.0.1:####/?member_id=#####",
+  "captured_at": "2026-08-20T18:18:05.872995+00:00",
+  "node_count": 19,
+  "text_node_count": 9,
+  "controls": [
+    {
+      "role": "link",
+      "name": "Member Search"
+    },
+    {
+      "role": "link",
+      "name": "Loans"
+    },
+    {
+      "role": "link",
+      "name": "Cards"
+    },
+    {
+      "role": "link",
+      "name": "Reports"
+    },
+    {
+      "role": "link",
+      "name": "Settings"
+    },
+    {
+      "role": "link",
+      "name": "Sign out"
+    },
+    {
+      "role": "textbox",
+      "name": null
+    },
+    {
+      "role": "button",
+      "name": "Search"
+    },
+    {
+      "role": "textbox",
+      "name": null
+    },
+    {
+      "role": "button",
+      "name": "Search"
+    }
+  ]
+}
