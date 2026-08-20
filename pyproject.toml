@@ -1,7 +1,7 @@
 [project]
 name = "computer-use-automation"
 version = "0.1.0"
-description = "LLM discovery -> reusable capability artifact -> deterministic replay -> human escalation, for legacy bank back-office UIs."
+description = "Understudy: an LLM learns a legacy back-office flow once; deterministic replay performs it thereafter, with policy holds and human handoff."
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7",

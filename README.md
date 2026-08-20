@@ -1,6 +1,9 @@
-# Computer-Use Automation System
+# Understudy
 
-An LLM discovers how to operate a legacy back-office UI **once**. That run becomes a typed,
+*Learns the part once by watching. Performs it the same way every night. Steps aside the moment
+someone senior walks on.*
+
+An LLM works out how to operate a legacy back-office UI **once**. That run becomes a typed,
 versioned **capability artifact**. From then on the flow is replayed **deterministically, with no
 model in the loop** — with an error taxonomy that separates real answers from real breakages, a
 policy layer that holds risky actions, and a human handoff on the *same live session* when a
