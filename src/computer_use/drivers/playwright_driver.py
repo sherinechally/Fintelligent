@@ -309,10 +309,56 @@ class PlaywrightDriver:
     def start(self, headless: bool = True, slow_mo: int = 0) -> None:
         """slow_mo pauses between actions (ms) so a human can watch a headed
         run. Zero in production — this is purely an observation aid."""
+        self._check_target_is_reachable()
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=headless, slow_mo=slow_mo)
         self._page = self._browser.new_page()
         self._page.goto(self.base_url)
+
+    def _check_target_is_reachable(self) -> None:
+        """Fail with something a human can act on, before launching a browser.
+
+        Playwright's own error for this is `ERR_HTTP_RESPONSE_CODE_FAILURE`
+        wrapped in forty lines of async traceback, which says nothing about
+        what to do. Two cases are worth naming precisely, because on macOS
+        the second masquerades as the first:
+
+          - nothing is listening: the app just isn't started.
+          - something else is listening. macOS AirPlay Receiver binds port
+            5000 and answers 403, so a stopped target app looks like a
+            protocol failure rather than a missing server. Anyone reviewing
+            this on a Mac hits it.
+        """
+        import http.client
+        import socket
+        from urllib.parse import urlparse
+
+        parsed = urlparse(self.base_url)
+        host, port = parsed.hostname or "127.0.0.1", parsed.port or 80
+        try:
+            conn = http.client.HTTPConnection(host, port, timeout=2)
+            conn.request("GET", parsed.path or "/")
+            response = conn.getresponse()
+            server = response.getheader("Server") or ""
+            conn.close()
+        except (OSError, socket.timeout):
+            raise RuntimeError(
+                f"Nothing is serving {self.base_url}.\n"
+                f"  Start the target app:  .venv/bin/python target_app/app.py\n"
+                f"  Or run the demo, which manages it for you: "
+                f".venv/bin/python scripts/demo_all.py"
+            ) from None
+
+        if "AirTunes" in server:
+            raise RuntimeError(
+                f"Port {port} is taken by macOS AirPlay Receiver, not the target app "
+                f"(it answered with Server: {server}).\n"
+                f"  Either turn off AirPlay Receiver in System Settings > General > "
+                f"AirDrop & Handoff,\n"
+                f"  or run the app on another port:  "
+                f"PORT=5050 .venv/bin/python target_app/app.py\n"
+                f"  and point at it:  export TARGET_APP_BASE_URL=http://127.0.0.1:5050"
+            )
 
     def goto(self, path: str) -> None:
         assert self._page is not None, "call start() first"

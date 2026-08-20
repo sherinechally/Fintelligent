@@ -233,6 +233,12 @@ evidence/               run logs (redacted; committed deliberately)
 
 ## Notes
 
+- **macOS users: AirPlay Receiver squats on port 5000.** If the target app isn't running, macOS
+  answers `403` on that port instead of refusing the connection, so a stopped app looks like a
+  protocol error. The driver detects this and tells you what to do. To avoid it entirely, turn off
+  AirPlay Receiver (System Settings → General → AirDrop & Handoff), or run on another port:
+  `PORT=5050 .venv/bin/python target_app/app.py` with
+  `export TARGET_APP_BASE_URL=http://127.0.0.1:5050`.
 - **The mock app's data resets when it restarts.** Transfers and new accounts are held in memory,
   so balances drift as you run demos. Restart the app for a clean slate.
 - **Evidence is committed and redacted.** Values keep their shape and lose their content
