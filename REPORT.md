@@ -60,6 +60,15 @@ a re-checkable reference, which is resolved against the live screen before succe
 model asserting "I reached the confirmation page" is not evidence; the same locator machinery
 replay uses is.
 
+**Reviewable means readable, so the artifact is also rendered as prose.**
+`playbook.py` writes a `.md` beside each capability: what it needs, what it does step by step,
+which control each step targets and *whether it is relying on position rather than a name*, which
+single step commits, and what happens when things go wrong. §3.2 asks for an artifact reviewable
+by "both a human reviewer and a calling agent" — JSON serves the agent well and the reviewer
+badly, and approving banking automation should not require reading nested `ControlRef` objects.
+It is generated, never edited: a hand-maintained description drifts from what runs, and a stale
+one is worse than none because it is still believed.
+
 **`recorded_tier` is the drift baseline.** Each step records which locator tier resolved it *at
 record time*. Without it, every fallback looks like drift: our artifact legitimately records four
 steps as `structural`, because those controls were ambiguous from the start. Drift is a *change*

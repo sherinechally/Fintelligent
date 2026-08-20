@@ -63,10 +63,10 @@
           "visual": null
         },
         "value": "${input.member_id}",
-        "intent": "Type member ID 10234 into Member ID search box",
+        "intent": "Enter member ID 10234 into the Member ID search box",
         "output_key": null
       },
-      "intent": "Type member ID 10234 into Member ID search box",
+      "intent": "Enter member ID 10234 into the Member ID search box",
       "recorded_tier": "structural"
     },
     {
@@ -76,7 +76,7 @@
         "target": {
           "semantic": {
             "role": "button",
-            "name": "Search",
+            "name": null,
             "match": "exact",
             "row_anchor": null,
             "column": null
@@ -94,10 +94,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Click Search button next to Member ID",
+        "intent": "Search for member 10234",
         "output_key": null
       },
-      "intent": "Click Search button next to Member ID",
+      "intent": "Search for member 10234",
       "recorded_tier": "structural"
     },
     {
@@ -116,10 +116,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open member detail page for J. Alvarez",
+        "intent": "Open member detail page for member 10234",
         "output_key": null
       },
-      "intent": "Open member detail page for J. Alvarez",
+      "intent": "Open member detail page for member 10234",
       "recorded_tier": "semantic"
     },
     {
@@ -147,10 +147,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Click the Filter icon under the Account Type column",
+        "intent": "Open filter control on Account Type column",
         "output_key": null
       },
-      "intent": "Click the Filter icon under the Account Type column",
+      "intent": "Open filter control on Account Type column",
       "recorded_tier": "structural"
     },
     {
@@ -169,10 +169,10 @@
           "visual": null
         },
         "value": "${input.filter_account_type}",
-        "intent": "Select Savings in the Account Type filter combobox",
+        "intent": "Filter Account Type column to show only Savings accounts",
         "output_key": null
       },
-      "intent": "Select Savings in the Account Type filter combobox",
+      "intent": "Filter Account Type column to show only Savings accounts",
       "recorded_tier": "semantic"
     },
     {
@@ -269,10 +269,10 @@
           "visual": null
         },
         "value": "${input.initial_deposit}",
-        "intent": "Enter initial deposit amount of 500",
+        "intent": "Enter initial deposit of $500",
         "output_key": null
       },
-      "intent": "Enter initial deposit amount of 500",
+      "intent": "Enter initial deposit of $500",
       "recorded_tier": "structural"
     },
     {
@@ -291,10 +291,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Submit the new sub-account form",
+        "intent": "Submit the new Money Market sub-account request",
         "output_key": null
       },
-      "intent": "Submit the new sub-account form",
+      "intent": "Submit the new Money Market sub-account request",
       "recorded_tier": "semantic"
     }
   ],
@@ -311,5 +311,5 @@
   },
   "commit_step_id": "step_10",
   "restartable_after_recovery": false,
-  "created_at": "2026-08-19T03:55:18.136524Z"
+  "created_at": "2026-08-20T19:47:19.470956Z"
 }

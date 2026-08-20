@@ -25,6 +25,7 @@ import os
 
 from computer_use.agent.discovery import DiscoveryAgent
 from computer_use.artifact import build_capability, save_capability
+from computer_use.playbook import write_playbook
 from computer_use.drivers.playwright_driver import PlaywrightDriver
 from computer_use.evidence.recorder import EvidenceRecorder
 
@@ -143,7 +144,9 @@ def main() -> None:
                 input_types={"initial_deposit": "number"},
             )
             path = save_capability(capability)
+            playbook = write_playbook(capability)
             print(f"\nCapability saved: {path}")
+            print(f"Playbook:         {playbook}  (the same artifact, in English)")
         else:
             print("Stuck reason:", result.stuck_reason)
             print("Explanation:", result.stuck_explanation)

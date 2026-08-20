@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from computer_use.playbook import write_playbook
 from computer_use.artifact import (
     Capability,
     CapabilityStep,
@@ -199,6 +200,7 @@ capability = Capability(
 if __name__ == "__main__":
     path = save_capability(capability)
     print(f"Wrote {path}")
+    print(f"Wrote {write_playbook(capability)}")
     print(f"  steps:       {len(capability.steps)}")
     print(f"  commit step: {capability.commit_step_id}")
     print(f"  inputs:      {[i.name for i in capability.inputs]}")

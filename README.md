@@ -218,11 +218,12 @@ src/computer_use/
   agent/discovery.py    the only place a model makes decisions
   replay/               deterministic executor + the known-states guard
   policy/               institutional limits, enforced here rather than by the app
+  playbook.py           renders a capability as prose a non-engineer can check
   tenants.py            one capability, many institutions: label maps + specialization
   escalation/           intervention requests and live-session control transfer
   evidence/             structured run logs + redaction
 target_app/             the mock back office being automated
-capabilities/           saved artifacts
+capabilities/           saved artifacts, each with a generated .md playbook
 tenants/                per-institution label maps
 evidence/               run logs (redacted; committed deliberately)
 ```
