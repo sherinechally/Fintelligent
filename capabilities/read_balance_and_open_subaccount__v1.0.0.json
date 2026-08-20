@@ -94,10 +94,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Click search button next to Member ID field",
+        "intent": "Click Search button next to Member ID",
         "output_key": null
       },
-      "intent": "Click search button next to Member ID field",
+      "intent": "Click Search button next to Member ID",
       "recorded_tier": "structural"
     },
     {
@@ -116,10 +116,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open member detail page for member 10234",
+        "intent": "Open member detail page for member ${input.member_id}",
         "output_key": null
       },
-      "intent": "Open member detail page for member 10234",
+      "intent": "Open member detail page for member ${input.member_id}",
       "recorded_tier": "semantic"
     },
     {
@@ -147,10 +147,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Open filter control on the Account Type column",
+        "intent": "Click the Filter button under Account Type column",
         "output_key": null
       },
-      "intent": "Open filter control on the Account Type column",
+      "intent": "Click the Filter button under Account Type column",
       "recorded_tier": "structural"
     },
     {
@@ -169,10 +169,10 @@
           "visual": null
         },
         "value": "${input.filter_account_type}",
-        "intent": "Filter account type to show only Savings accounts",
+        "intent": "Select ${input.filter_account_type} option in the Account Type filter combobox",
         "output_key": null
       },
-      "intent": "Filter account type to show only Savings accounts",
+      "intent": "Select ${input.filter_account_type} option in the Account Type filter combobox",
       "recorded_tier": "semantic"
     },
     {
@@ -194,10 +194,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Read the Savings account balance",
+        "intent": "Read the ${input.filter_account_type} account balance",
         "output_key": "savings_balance"
       },
-      "intent": "Read the Savings account balance",
+      "intent": "Read the ${input.filter_account_type} account balance",
       "recorded_tier": "semantic"
     },
     {
@@ -238,10 +238,10 @@
           "visual": null
         },
         "value": "${input.account_type}",
-        "intent": "Select Money Market as account type",
+        "intent": "Select ${input.account_type} as the account type",
         "output_key": null
       },
-      "intent": "Select Money Market as account type",
+      "intent": "Select ${input.account_type} as the account type",
       "recorded_tier": "semantic"
     },
     {
@@ -269,10 +269,10 @@
           "visual": null
         },
         "value": "${input.initial_deposit}",
-        "intent": "Enter initial deposit amount of $500",
+        "intent": "Enter initial deposit amount of $${input.initial_deposit}",
         "output_key": null
       },
-      "intent": "Enter initial deposit amount of $500",
+      "intent": "Enter initial deposit amount of $${input.initial_deposit}",
       "recorded_tier": "structural"
     },
     {
@@ -291,10 +291,10 @@
           "visual": null
         },
         "value": null,
-        "intent": "Submit the new sub-account request",
+        "intent": "Submit the new sub-account form",
         "output_key": null
       },
-      "intent": "Submit the new sub-account request",
+      "intent": "Submit the new sub-account form",
       "recorded_tier": "semantic"
     }
   ],
@@ -311,5 +311,5 @@
   },
   "commit_step_id": "step_10",
   "restartable_after_recovery": false,
-  "created_at": "2026-08-20T21:43:57.611403Z"
+  "created_at": "2026-08-20T21:58:38.143633Z"
 }

@@ -1,0 +1,24 @@
+{
+  "run_id": "run-20260820T215838Z-fd8123",
+  "mode": "discovery",
+  "recorded_at": "2026-08-20T21:58:38.147493+00:00",
+  "capability": {
+    "id": "read_balance_and_open_subaccount",
+    "version": "1.0.0"
+  },
+  "operator": "s.patel",
+  "inputs_supplied": [
+    "account_type",
+    "filter_account_type",
+    "initial_deposit",
+    "member_id"
+  ],
+  "model": "claude-sonnet-5",
+  "goal": "Look up member ${input.member_id} and open their detail page. The account table's column headers have small icon-only controls (no text labels) for sorting and filtering \u2014 work out which is which yourself. Use the filter control on the Account Type column to show only ${input.filter_account_type} accounts, then read the ${input.filter_account_type} balance. Finally, open a new ${input.account_type} sub-account for this member with an initial deposit of $${input.initial_deposit}, and reach the confirmation screen.",
+  "ok": true,
+  "llm_turns": 11,
+  "stuck_reason": null,
+  "outputs": {
+    "savings_balance": "recorded"
+  }
+}
